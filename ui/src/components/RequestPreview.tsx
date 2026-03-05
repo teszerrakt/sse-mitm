@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { RequestInfo } from "../types";
+import { CodeBlock } from "./CodeBlock";
 
 interface Props {
   request: RequestInfo;
@@ -43,15 +44,9 @@ export function RequestPreview({ request }: Props) {
       {/* Body */}
       {request.body && (
         <div className="px-3 pb-2">
-          <pre className="text-xs text-[var(--text)] bg-[var(--bg)] rounded p-2 overflow-x-auto whitespace-pre-wrap break-all font-mono">
-            {(() => {
-              try {
-                return JSON.stringify(JSON.parse(request.body!), null, 2);
-              } catch {
-                return request.body;
-              }
-            })()}
-          </pre>
+          <div className="rounded overflow-hidden border border-[var(--border)]">
+            <CodeBlock value={request.body} maxHeight="240px" />
+          </div>
         </div>
       )}
     </div>

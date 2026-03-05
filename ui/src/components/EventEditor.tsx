@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { SSEEvent } from "../types";
+import { CodeBlock } from "./CodeBlock";
 
 interface Props {
   event: SSEEvent;
@@ -13,33 +14,13 @@ export function EventEditor({ event, onConfirm, onClose }: Props) {
   const [id, setId] = useState(event.id ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  const [prettyMode, setPrettyMode] = useState(() => {
-    try {
-      JSON.parse(event.data);
-      return true;
-    } catch {
-      return false;
-    }
-  });
-
-  const prettyData = (() => {
-    if (!prettyMode) return data;
-    try {
-      return JSON.stringify(JSON.parse(data), null, 2);
-    } catch {
-      return data;
-    }
-  })();
-
   const handleConfirm = () => {
+    // Always send minified JSON if data is valid JSON, else send as-is
     let finalData = data;
-    if (prettyMode) {
-      try {
-        finalData = JSON.stringify(JSON.parse(data));
-      } catch {
-        setError("Invalid JSON in data field");
-        return;
-      }
+    try {
+      finalData = JSON.stringify(JSON.parse(data));
+    } catch {
+      // not JSON — send raw
     }
     setError(null);
     onConfirm({
@@ -97,25 +78,21 @@ export function EventEditor({ event, onConfirm, onClose }: Props) {
           </label>
 
           {/* Data */}
-          <label className="flex flex-col gap-1 flex-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
-                data
-              </span>
-              <button
-                className="text-xs text-[var(--accent)] hover:text-[var(--accent-hover)]"
-                onClick={() => setPrettyMode((p) => !p)}
-              >
-                {prettyMode ? "Raw" : "Pretty"}
-              </button>
+          <div className="flex flex-col gap-1 flex-1">
+            <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">data</span>
+            <div className="rounded overflow-hidden border border-[var(--border)]">
+              <CodeBlock
+                value={data}
+                readOnly={false}
+                onChange={(val) => {
+                  setData(val);
+                  setError(null);
+                }}
+                height="220px"
+                lineNumbers
+              />
             </div>
-            <textarea
-              className="bg-[var(--bg)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] text-sm font-mono focus:outline-none focus:border-[var(--accent)] resize-none h-48"
-              value={prettyMode ? prettyData : data}
-              onChange={(e) => setData(e.target.value)}
-              spellCheck={false}
-            />
-          </label>
+          </div>
 
           {error && <div className="text-[var(--danger)] text-sm">{error}</div>}
         </div>

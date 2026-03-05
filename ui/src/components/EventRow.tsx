@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { PendingEvent, HistoryEntry, SSEEvent } from "../types";
 import { EventEditor } from "./EventEditor";
 import { InjectModal } from "./InjectModal";
+import { CodeBlock } from "./CodeBlock";
 
 interface Props {
   pending: PendingEvent[];
@@ -34,14 +35,6 @@ function ActionLabel({ action }: { action: string }) {
       {action}
     </span>
   );
-}
-
-function prettyData(data: string): string {
-  try {
-    return JSON.stringify(JSON.parse(data), null, 2);
-  } catch {
-    return data;
-  }
 }
 
 export function EventRow({
@@ -87,9 +80,9 @@ export function EventRow({
           {expandedHistIdx === i && (
             <div className="px-3 pb-2">
               {h.sent_event && (
-                <pre className="text-xs text-[var(--text)] bg-[var(--bg)] rounded p-2 overflow-x-auto font-mono whitespace-pre-wrap break-all">
-                  {prettyData(h.sent_event.data)}
-                </pre>
+                <div className="rounded overflow-hidden border border-[var(--border)]">
+                  <CodeBlock value={h.sent_event.data} maxHeight="300px" />
+                </div>
               )}
             </div>
           )}
@@ -150,9 +143,9 @@ export function EventRow({
           {/* Expanded data */}
           {expandedPendIdx === i && (
             <div className="px-3 pb-2">
-              <pre className="text-xs text-[var(--text)] bg-[var(--bg)] rounded p-2 overflow-x-auto font-mono whitespace-pre-wrap break-all">
-                {prettyData(p.event.data)}
-              </pre>
+              <div className="rounded overflow-hidden border border-[var(--border)]">
+                <CodeBlock value={p.event.data} maxHeight="300px" />
+              </div>
             </div>
           )}
         </div>

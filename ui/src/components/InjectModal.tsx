@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { SSEEvent } from "../types";
+import { CodeBlock } from "./CodeBlock";
 
 interface Props {
   afterIndex: number;
@@ -73,15 +74,18 @@ export function InjectModal({ afterIndex, onConfirm, onClose }: Props) {
             />
           </label>
 
-          <label className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <span className="text-[var(--text-muted)] text-xs uppercase tracking-wider">data</span>
-            <textarea
-              className="bg-[var(--bg)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] text-sm font-mono focus:outline-none focus:border-[var(--inject)] resize-none h-32"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-              spellCheck={false}
-            />
-          </label>
+            <div className="rounded overflow-hidden border border-[var(--border)]">
+              <CodeBlock
+                value={data}
+                readOnly={false}
+                onChange={(val) => setData(val)}
+                height="160px"
+                lineNumbers
+              />
+            </div>
+          </div>
 
           {error && <div className="text-[var(--danger)] text-sm">{error}</div>}
         </div>
