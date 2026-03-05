@@ -1,0 +1,36 @@
+{
+  "enabled": false,
+  "url_pattern": "*/sse*",
+  "mode": "full_mock",
+  "pipeline": [
+    {
+      "action": "mock",
+      "event": {
+        "event": "status",
+        "data": "{\"status\":\"SEARCHING\",\"progress\":0}",
+        "id": "1",
+        "retry": null
+      }
+    },
+    { "action": "delay", "delay_ms": 1000 },
+    {
+      "action": "mock",
+      "event": {
+        "event": "status",
+        "data": "{\"status\":\"SEARCHING\",\"progress\":50}",
+        "id": "2",
+        "retry": null
+      }
+    },
+    { "action": "delay", "delay_ms": 1000 },
+    {
+      "action": "mock",
+      "event": {
+        "event": "result",
+        "data": "{\"status\":\"COMPLETE\",\"results\":[{\"id\":\"FL001\",\"price\":1500000}]}",
+        "id": "3",
+        "retry": null
+      }
+    }
+  ]
+}

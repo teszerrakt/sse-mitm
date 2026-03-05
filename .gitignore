@@ -1,0 +1,26 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# UI build output and deps
+ui/dist/
+ui/node_modules/
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+
+# mitmproxy state
+~/.mitmproxy/
+
+# Mock sessions (user data)
+mocks/*.json
+!mocks/_example_*.json

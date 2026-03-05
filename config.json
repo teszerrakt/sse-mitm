@@ -1,0 +1,11 @@
+{
+  "intercept_patterns": [
+    "*/sse*",
+    "*/stream*",
+    "*/events*",
+    "*/subscribe*",
+    "*/push*"
+  ],
+  "relay_host": "127.0.0.1",
+  "relay_port": 9000
+}

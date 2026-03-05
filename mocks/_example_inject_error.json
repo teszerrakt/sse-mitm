@@ -1,0 +1,19 @@
+{
+  "enabled": false,
+  "url_pattern": "*/sse*",
+  "mode": "pipeline",
+  "pipeline": [
+    { "action": "passthrough" },
+    { "action": "passthrough" },
+    {
+      "action": "mock",
+      "event": {
+        "event": "error",
+        "data": "{\"code\":\"UPSTREAM_ERROR\",\"message\":\"Simulated server error\"}",
+        "id": null,
+        "retry": null
+      }
+    },
+    { "action": "drop_rest" }
+  ]
+}

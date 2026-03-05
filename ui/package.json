@@ -1,0 +1,37 @@
+{
+  "name": "ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint src/",
+    "lint:fix": "oxlint --fix src/",
+    "fmt": "oxfmt src/",
+    "fmt:check": "oxfmt --check src/",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@codemirror/lang-json": "^6.0.2",
+    "@tailwindcss/vite": "^4.2.1",
+    "@uiw/react-codemirror": "^4.25.7",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.577.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1"
+  }
+}
