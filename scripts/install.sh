@@ -52,6 +52,11 @@ echo "[install] Installing Node modules..."
 cd "$ORTHRUS_ROOT"
 bun install
 
+# --- Set up git hooks ---
+echo "[install] Configuring git hooks..."
+git config core.hooksPath .githooks
+echo "  ✓ pre-commit hook enabled"
+
 echo ""
 echo "[install] Done."
 echo ""

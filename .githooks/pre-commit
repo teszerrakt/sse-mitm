@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Pre-commit hook: lint only staged files.
+# Python  → ruff check
+# TS/TSX  → oxlint + oxfmt --check
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+FAILED=0
+
+# ── Python: ruff check on staged .py files ──────────────────────────────────
+
+PY_FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.py')
+
+if [ -n "$PY_FILES" ]; then
+  printf "${YELLOW}[pre-commit]${NC} Checking Python files with ruff...\n"
+  # shellcheck disable=SC2086
+  if ! uv run ruff check $PY_FILES; then
+    printf "${RED}[pre-commit] ruff check failed.${NC} Run 'uv run ruff check --fix' to auto-fix.\n"
+    FAILED=1
+  else
+    printf "${GREEN}[pre-commit] ruff check passed.${NC}\n"
+  fi
+fi
+
+# ── TypeScript / React: oxlint + oxfmt on staged .ts/.tsx files in ui/ ──────
+
+UI_FILES=$(git diff --cached --name-only --diff-filter=ACM -- 'ui/src/**.ts' 'ui/src/**.tsx')
+
+if [ -n "$UI_FILES" ]; then
+  printf "${YELLOW}[pre-commit]${NC} Checking TypeScript files with oxlint...\n"
+  # shellcheck disable=SC2086
+  if ! bun run --cwd ui oxlint $UI_FILES; then
+    printf "${RED}[pre-commit] oxlint failed.${NC} Run 'cd ui && bun run lint:fix' to auto-fix.\n"
+    FAILED=1
+  else
+    printf "${GREEN}[pre-commit] oxlint passed.${NC}\n"
+  fi
+
+  printf "${YELLOW}[pre-commit]${NC} Checking TypeScript formatting with oxfmt...\n"
+  # shellcheck disable=SC2086
+  if ! bun run --cwd ui oxfmt --check $UI_FILES; then
+    printf "${RED}[pre-commit] oxfmt check failed.${NC} Run 'cd ui && bun run fmt' to auto-format.\n"
+    FAILED=1
+  else
+    printf "${GREEN}[pre-commit] oxfmt passed.${NC}\n"
+  fi
+fi
+
+# ── Summary ──────────────────────────────────────────────────────────────────
+
+if [ "$FAILED" -ne 0 ]; then
+  printf "\n${RED}[pre-commit] Commit blocked — fix lint errors above.${NC}\n"
+  exit 1
+fi
+
+if [ -z "$PY_FILES" ] && [ -z "$UI_FILES" ]; then
+  printf "${GREEN}[pre-commit] No lintable files staged — skipping.${NC}\n"
+fi
