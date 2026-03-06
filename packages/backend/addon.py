@@ -51,10 +51,14 @@ class SSEInterceptorAddon:
     Config is hot-reloaded from config.json on file change — no restart needed.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        relay_host: str | None = None,
+        relay_port: int | None = None,
+    ) -> None:
         config = _load_config()
-        self._relay_host: str = config["relay_host"]
-        self._relay_port: int = int(config["relay_port"])
+        self._relay_host: str = relay_host or config["relay_host"]
+        self._relay_port: int = relay_port or int(config["relay_port"])
         self._patterns: list[str] = list(config["sse_patterns"])
         self._config_mtime: float = self._get_config_mtime()
         self._last_tls_error_at: dict[tuple[str, str | None], float] = {}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { AppConfig } from "../types";
+import { apiFetch } from "../utils/api";
 
 interface UseConfigResult {
   config: AppConfig | null;
@@ -20,7 +21,7 @@ export function useConfig(): UseConfigResult {
     setLoading(true);
     setError(null);
 
-    fetch("/config")
+    apiFetch("/config")
       .then((res) => {
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         return res.json() as Promise<AppConfig>;
@@ -44,7 +45,7 @@ export function useConfig(): UseConfigResult {
   }, [revision]);
 
   const saveConfig = useCallback(async (updated: AppConfig): Promise<void> => {
-    const res = await fetch("/config", {
+    const res = await apiFetch("/config", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updated),

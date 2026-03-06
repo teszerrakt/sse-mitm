@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { apiFetch } from "../utils/api";
 import type {
   SessionState,
   SessionInfo,
@@ -17,7 +18,7 @@ export function useSessions() {
 
   // Load existing sessions on mount
   useEffect(() => {
-    fetch("/sessions")
+    apiFetch("/sessions")
       .then((r) => r.json())
       .then((infos: SessionInfo[]) => {
         setSessions((prev) => {
@@ -277,7 +278,7 @@ export function useSessions() {
     setSelectedId(null);
     // Send via both WS (broadcasts to other clients) and REST (ensures backend clears)
     send({ type: "clear_sessions" });
-    fetch("/sessions", { method: "DELETE" }).catch(() => {});
+    apiFetch("/sessions", { method: "DELETE" }).catch(() => {});
   }, [send]);
 
   return {

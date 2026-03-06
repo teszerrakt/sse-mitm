@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import type { ServerMsg, ClientCmd } from "../types";
+import { apiWsUrl } from "../utils/api";
 
 type MessageHandler = (msg: ServerMsg) => void;
 
@@ -22,8 +23,7 @@ export function useWebSocket(onMessage: MessageHandler) {
     }
 
     connectingRef.current = true;
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    const ws = new WebSocket(apiWsUrl("/ws"));
     wsRef.current = ws;
 
     ws.onopen = () => {
