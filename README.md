@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="packages/web/src/assets/orthrus.png" alt="Orthrus" width="120" />
+  <img src="ui/src/assets/orthrus.png" alt="Orthrus" width="120" />
 </p>
 
 # Orthrus
@@ -30,16 +30,16 @@ Mobile/Browser ──WiFi proxy──► mitmproxy :28080
 
 ```bash
 # Check prerequisites and install all dependencies
-./scripts/install.sh
+./install.sh
 
 # Build the UI
-bun run build:web
+cd ui && bun run build && cd ..
 
 # Run everything
-./scripts/run.sh
+./run.sh
 ```
 
-`scripts/run.sh` auto-builds the UI only when inputs change (`packages/web/src`, `packages/web/index.html`, `packages/web/package.json`, `packages/web/bun.lock`, `packages/web/vite.config.ts`, `packages/web/tsconfig*.json`).
+`run.sh` auto-builds the UI only when inputs change (`ui/src`, `ui/index.html`, `ui/package.json`, `ui/bun.lock`, `ui/vite.config.ts`, `ui/tsconfig*.json`).
 
 Open `http://localhost:29000` in your browser.
 
@@ -47,10 +47,10 @@ On your mobile device, set the WiFi proxy to `<your-machine-ip>:28080`.
 
 ## How It Works
 
-1. **mitmproxy** (`packages/backend/addon.py`) handles HTTPS CONNECT tunneling and certificate installation. It intercepts matching SSE requests and rewrites them to the relay server.
-2. **relay server** (`packages/backend/relay_server.py`) receives the rewritten request, fetches the real SSE stream from upstream, and holds each event at a breakpoint until the user acts on it via the UI.
+1. **mitmproxy** (`addon.py`) handles HTTPS CONNECT tunneling and certificate installation. It intercepts matching SSE requests and rewrites them to the relay server.
+2. **relay server** (`relay_server.py`) receives the rewritten request, fetches the real SSE stream from upstream, and holds each event at a breakpoint until the user acts on it via the UI.
 3. **WebSocket** connects the browser UI to the relay server for real-time bidirectional control.
-4. **React UI** (`packages/web/`) shows all active SSE sessions in a left panel; clicking a session shows events in a right panel with action buttons.
+4. **React UI** (`ui/`) shows all active SSE sessions in a left panel; clicking a session shows events in a right panel with action buttons.
 
 ## Event Actions
 
@@ -111,16 +111,14 @@ Patterns use glob syntax — `*` matches anything. The addon hot-reloads `config
 
 ```bash
 # Run everything with Vite HMR (relay + mitmproxy + Vite dev server)
-./scripts/run_dev.sh
-# or
-bun run dev
+./run_dev.sh
 
 # Python type check
-cd packages/backend && uv run mypy src/ relay_server.py addon.py
+uv run mypy src/ relay_server.py addon.py
 
 # Python lint
-cd packages/backend && uv run ruff check .
+uv run ruff check .
 
 # UI dev server only (if relay is already running separately)
-bun --cwd packages/web run dev
+cd ui && bun run dev
 ```
