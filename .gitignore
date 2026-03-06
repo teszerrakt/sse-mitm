@@ -28,3 +28,6 @@ packages/desktop/src-tauri/target/
 
 # Misc
 .ruff_cache/
+
+# Opencode
+.tmp/
