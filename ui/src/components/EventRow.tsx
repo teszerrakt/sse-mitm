@@ -37,6 +37,14 @@ function ActionLabel({ action }: { action: string }) {
   );
 }
 
+function formatTime(ts: number): string {
+  const d = new Date(ts * 1000);
+  const base = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  // Insert ".SSS" before the AM/PM suffix, or append if no suffix
+  return base.replace(/(\s?[AP]M)$/i, `.${ms}$1`) || `${base}.${ms}`;
+}
+
 export function EventRow({
   pending,
   history,
@@ -70,8 +78,8 @@ export function EventRow({
             {h.delay_ms > 0 && (
               <span className="text-[var(--warning)] text-xs">+{h.delay_ms}ms</span>
             )}
-            <span className="ml-auto text-[var(--text-muted)] text-xs">
-              {new Date(h.timestamp * 1000).toLocaleTimeString()}
+            <span className="ml-auto text-[var(--text-muted)] text-xs tabular-nums">
+              {formatTime(h.timestamp)}
             </span>
             <span className="text-[var(--text-muted)] text-xs">
               {expandedHistIdx === i ? "▲" : "▼"}

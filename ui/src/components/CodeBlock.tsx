@@ -7,7 +7,11 @@ import { EditorView } from "@codemirror/view";
 const transparentBg = EditorView.theme({
   "&": { background: "var(--bg) !important", backgroundColor: "var(--bg) !important" },
   ".cm-scroller": { background: "var(--bg) !important", backgroundColor: "var(--bg) !important" },
-  ".cm-gutters": { background: "var(--bg-panel) !important", backgroundColor: "var(--bg-panel) !important", borderRight: "1px solid var(--border)" },
+  ".cm-gutters": {
+    background: "var(--bg-panel) !important",
+    backgroundColor: "var(--bg-panel) !important",
+    borderRight: "1px solid var(--border)",
+  },
 });
 
 const JSON_EXTENSIONS = [json(), oneDark, transparentBg];

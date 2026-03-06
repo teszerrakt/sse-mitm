@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Copy, Check } from "lucide-react";
 import { useSessions } from "./hooks/useSessions";
+import { useConfig } from "./hooks/useConfig";
 import { NetworkTab } from "./components/NetworkTab";
 import { SessionDetail } from "./components/SessionDetail";
 import { SettingsPage } from "./components/SettingsPage";
@@ -9,6 +10,8 @@ type View = "inspector" | "settings";
 
 export default function App() {
   const [view, setView] = useState<View>("inspector");
+  const [copied, setCopied] = useState(false);
+  const { config } = useConfig();
 
   const {
     sessions,
@@ -25,6 +28,14 @@ export default function App() {
 
   const selected = selectedId ? sessions[selectedId] : null;
 
+  const handleCopy = () => {
+    if (config?.proxy_address) {
+      navigator.clipboard.writeText(config.proxy_address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
   if (view === "settings") {
     return <SettingsPage onBack={() => setView("inspector")} />;
   }
@@ -36,12 +47,23 @@ export default function App() {
         <span className="text-[var(--text)] font-semibold text-base tracking-tight">
           SSE Inspector
         </span>
-        <span className="text-[var(--text-muted)] text-sm">mitmproxy + relay</span>
+        {/* Proxy address — click to copy */}
+        <button
+          onClick={handleCopy}
+          title="Click to copy proxy address"
+          className="flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors group"
+        >
+          <span className="font-mono">{config?.proxy_address ?? "..."}</span>
+          {copied ? (
+            <Check size={13} className="text-[var(--success)]" />
+          ) : (
+            <Copy size={13} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+        </button>
         <div className="ml-auto flex items-center gap-3">
           <span className="text-sm text-[var(--text-muted)]">
             {Object.keys(sessions).length} session{Object.keys(sessions).length !== 1 ? "s" : ""}
           </span>
-          {/* Settings gear icon */}
           <button
             onClick={() => setView("settings")}
             className="w-8 h-8 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)] transition-colors"

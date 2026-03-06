@@ -120,8 +120,22 @@ export function SessionDetail({
         </div>
       )}
 
+      {/* Request section label */}
+      <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
+        <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-medium">
+          Request
+        </span>
+      </div>
+
       {/* Request info */}
       <RequestPreview request={session.info.request} />
+
+      {/* Response section label */}
+      <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
+        <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-medium">
+          Response Events
+        </span>
+      </div>
 
       {/* Events */}
       <div className="flex-1 overflow-y-auto">

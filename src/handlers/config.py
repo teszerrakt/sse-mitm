@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import socket
 from pathlib import Path
 
 from aiohttp import web
@@ -15,6 +17,18 @@ _DEFAULT_CONFIG = {
     "relay_host": "127.0.0.1",
     "relay_port": 29000,
 }
+
+
+def _get_lan_ip() -> str:
+    """Return the machine's LAN IP — the address other devices can reach."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
 
 
 def _read_config() -> dict:
@@ -32,8 +46,10 @@ def _write_config(data: dict) -> None:
 
 
 async def get_config_handler(request: web.Request) -> web.Response:
-    """GET /config — return current config.json contents."""
+    """GET /config — return current config.json contents plus runtime info."""
     config = _read_config()
+    proxy_port = int(os.environ.get("PROXY_PORT", 28080))
+    config["proxy_address"] = f"{_get_lan_ip()}:{proxy_port}"
     return web.json_response(config)
 
 

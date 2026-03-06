@@ -146,4 +146,5 @@ export interface AppConfig {
   sse_patterns: string[];
   relay_host: string;
   relay_port: number;
+  proxy_address: string;
 }
