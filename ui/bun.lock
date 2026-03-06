@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "ui",
+      "name": "orthrus-ui",
       "dependencies": {
         "@codemirror/lang-json": "^6.0.2",
         "@tailwindcss/vite": "^4.2.1",

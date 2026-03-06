@@ -45,7 +45,7 @@ async def _ws_broadcaster(app: web.Application):
 
 async def on_startup(app: web.Application) -> None:
     app["http_client"] = aiohttp.ClientSession()
-    app["ws_clients"]: set[web.WebSocketResponse] = set()
+    app["ws_clients"] = set()
     app["ws_broadcaster"] = await _ws_broadcaster(app)
 
     mock_loader: MockLoader = app["mock_loader"]
@@ -88,6 +88,27 @@ def create_app(mocks_dir: Path, auto_forward: bool = False) -> web.Application:
     # Serve React UI build artifacts
     if UI_DIST.exists():
         app.router.add_static("/assets", UI_DIST / "assets")
+        if (UI_DIST / "fonts").exists():
+            app.router.add_static("/fonts", UI_DIST / "fonts")
+
+        def static_file_handler(path: Path):
+            async def handler(request: web.Request) -> web.FileResponse:
+                return web.FileResponse(path)
+
+            return handler
+
+        for static_file in (
+            "favicon.ico",
+            "favicon-32x32.png",
+            "apple-touch-icon.png",
+            "orthrus.png",
+        ):
+            file_path = UI_DIST / static_file
+            if file_path.exists():
+                app.router.add_get(
+                    f"/{static_file}",
+                    static_file_handler(file_path),
+                )
 
         async def serve_index(request: web.Request) -> web.FileResponse:
             return web.FileResponse(UI_DIST / "index.html")

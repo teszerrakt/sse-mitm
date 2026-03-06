@@ -1,5 +1,5 @@
 [project]
-name = "fpr-sse-mitm"
+name = "orthrus"
 version = "0.1.0"
 description = "mitmproxy-based SSE event debugger for QA"
 requires-python = ">=3.12"

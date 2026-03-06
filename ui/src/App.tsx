@@ -6,6 +6,7 @@ import { useClientAliases } from "./hooks/useClientAliases";
 import { NetworkTab } from "./components/NetworkTab";
 import { SessionDetail } from "./components/SessionDetail";
 import { SettingsPage } from "./components/SettingsPage";
+import orthrusLogo from "./assets/orthrus.png";
 
 type View = "inspector" | "settings";
 
@@ -48,9 +49,15 @@ export default function App() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Top bar */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
-        <span className="text-[var(--text)] font-semibold text-base tracking-tight">
-          SSE Inspector
-        </span>
+        <div className="flex items-center gap-2.5">
+          <img src={orthrusLogo} alt="Orthrus logo" className="h-7 w-7 rounded-sm object-cover" />
+          <span
+            className="text-[var(--text)] text-base tracking-wide lowercase"
+            style={{ fontFamily: '"Satyp", "SF Mono", monospace' }}
+          >
+            orthrus
+          </span>
+        </div>
         {/* Proxy address — click to copy */}
         <button
           onClick={handleCopy}

@@ -55,7 +55,9 @@ export function NetworkTab({
   const [certModalIp, setCertModalIp] = useState<string | null>(null);
 
   const groups = useMemo<GroupData[]>(() => {
-    const sorted = Object.values(sessions).sort((a, b) => a.info.created_at - b.info.created_at);
+    const sorted = Object.values(sessions).sort(
+      (a, b) => a.info.created_at - b.info.created_at,
+    );
     const map = new Map<string, GroupData>();
 
     for (const session of sorted) {
@@ -83,7 +85,7 @@ export function NetworkTab({
   }, [sessions]);
 
   const selectedGroup = certModalIp
-    ? groups.find((g) => g.ip === certModalIp) ?? null
+    ? (groups.find((g) => g.ip === certModalIp) ?? null)
     : null;
   const selectedGroupUa = selectedGroup?.sessions[0]?.info.user_agent ?? null;
   const selectedOs = detectOS(selectedGroupUa);
@@ -127,7 +129,9 @@ export function NetworkTab({
         {groups.map((group) => {
           const first = group.sessions[0];
           const osInfo = detectOS(first?.info.user_agent);
-          const groupAlias = group.ip ? aliases[group.ip] || osInfo.os : "Unknown";
+          const groupAlias = group.ip
+            ? aliases[group.ip] || osInfo.os
+            : "Unknown";
           const isExpanded = expanded.has(group.key);
           const showTlsWarning = group.ip ? tlsErrorIps.has(group.ip) : false;
 
@@ -139,11 +143,20 @@ export function NetworkTab({
               >
                 <div className="flex items-center gap-2">
                   {isExpanded ? (
-                    <ChevronDown size={14} className="text-[var(--text-muted)] shrink-0" />
+                    <ChevronDown
+                      size={14}
+                      className="text-[var(--text-muted)] shrink-0"
+                    />
                   ) : (
-                    <ChevronRight size={14} className="text-[var(--text-muted)] shrink-0" />
+                    <ChevronRight
+                      size={14}
+                      className="text-[var(--text-muted)] shrink-0"
+                    />
                   )}
-                  <osInfo.Icon size={14} className="text-[var(--text-muted)] shrink-0" />
+                  <osInfo.Icon
+                    size={14}
+                    className="text-[var(--text-muted)] shrink-0"
+                  />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -164,7 +177,9 @@ export function NetworkTab({
                         />
                       ) : (
                         <>
-                          <span className="text-sm text-[var(--text)] truncate">{groupAlias}</span>
+                          <span className="text-sm text-[var(--text)] truncate">
+                            {groupAlias}
+                          </span>
                           {group.ip ? (
                             <button
                               onClick={(e) => {
@@ -199,7 +214,9 @@ export function NetworkTab({
                     </button>
                   ) : null}
 
-                  <span className="text-xs text-[var(--text-muted)]">{group.sessions.length}</span>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    {group.sessions.length}
+                  </span>
                 </div>
               </button>
 

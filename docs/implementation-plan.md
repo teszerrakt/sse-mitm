@@ -67,7 +67,7 @@ JSON mock files and replayed later without a live server.
 ## Project Structure
 
 ```
-fpr-sse-mitm/
+orthrus/
 ├── docs/
 │   └── implementation-plan.md     ← this file
 │
@@ -697,7 +697,7 @@ All messages are JSON. Both directions use discriminated union on `type`.
 
 ```toml
 [project]
-name = "fpr-sse-mitm"
+name = "orthrus"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [

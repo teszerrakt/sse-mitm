@@ -1,4 +1,8 @@
-# fpr-sse-mitm
+<p align="center">
+  <img src="ui/src/assets/orthrus.png" alt="Orthrus" width="120" />
+</p>
+
+# Orthrus
 
 SSE debugging tool — intercepts Server-Sent Events with mitmproxy, routes them through a relay server, and presents a Chrome DevTools-style UI to inspect, pause, edit, drop, inject, and delay individual events in real time.
 
