@@ -28,7 +28,7 @@ _SSE_HEADERS = {
 # SSE comment heartbeat — keeps Postman/curl/browser connections alive while
 # events are held at a breakpoint. Invisible to SSE consumers.
 _HEARTBEAT_BYTES = b": keep-alive\n\n"
-_HEARTBEAT_INTERVAL = 15  # seconds
+_HEARTBEAT_INTERVAL = 5  # seconds — short enough to beat Postman's read timeout
 
 # Headers that must not be forwarded upstream
 _HOP_BY_HOP = frozenset(
@@ -119,6 +119,9 @@ async def relay_handler(request: web.Request) -> web.StreamResponse:
     # Prepare streaming response to client
     response = web.StreamResponse(status=200, headers=_SSE_HEADERS)
     await response.prepare(request)
+    # Immediately flush a body byte so mitmproxy/Postman know the stream is live
+    # and don't close the connection waiting for the first real event
+    await response.write(b": connected\n\n")
 
     async def _heartbeat() -> None:
         """Periodically write SSE comment lines so the client never times out."""
@@ -157,16 +160,13 @@ async def _read_upstream(
     from src.sse_client import stream_upstream_sse
     from src.models import EventMsg, SessionUpdatedMsg
 
-    event_index = 0
-
     async def on_event(event: SSEEvent) -> None:
-        nonlocal event_index
-        await session.enqueue_upstream_event(event)
+        index = await session.enqueue_upstream_event(event)
         await ws_broadcaster(
             EventMsg(
                 type="event",
                 session_id=session.id,
-                index=event_index,
+                index=index,
                 event=event,
             ).model_dump_json()
         )
@@ -176,11 +176,9 @@ async def _read_upstream(
                 session=session.to_session_info(),
             ).model_dump_json()
         )
-        event_index += 1
 
     async def on_end() -> None:
         await session.signal_upstream_done()
-        await session.close_stream()
 
     async def on_error(exc: Exception) -> None:
         logger.error("Session %s upstream error: %s", session.id, exc)
