@@ -1,6 +1,6 @@
 # fpr-sse-mitm
 
-SSE debugging tool for QA — intercepts Server-Sent Events with mitmproxy, routes them through a relay server, and presents a Chrome DevTools-style UI to inspect, pause, edit, drop, inject, and delay individual events in real time.
+SSE debugging tool — intercepts Server-Sent Events with mitmproxy, routes them through a relay server, and presents a Chrome DevTools-style UI to inspect, pause, edit, drop, inject, and delay individual events in real time.
 
 ## Architecture
 
