@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export ORTHRUS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 RELAY_PORT="${RELAY_PORT:-29000}"
 PROXY_PORT="${PROXY_PORT:-28080}"
-MOCKS_DIR="${MOCKS_DIR:-./mocks}"
+MOCKS_DIR="${MOCKS_DIR:-$ORTHRUS_ROOT/mocks}"
 
 # Detect the machine's LAN IP (the address other devices can reach us on)
-LAN_IP=$(uv run python -c "
+LAN_IP=$(cd "$ORTHRUS_ROOT" && uv run python -c "
 import socket
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -18,21 +21,21 @@ except Exception:
 " 2>/dev/null || echo "localhost")
 
 echo "[run_dev] Starting relay server on :${RELAY_PORT}"
-uv run python relay_server.py --port "$RELAY_PORT" --mocks-dir "$MOCKS_DIR" &
+(cd "$ORTHRUS_ROOT/packages/backend" && uv run python relay_server.py --port "$RELAY_PORT" --mocks-dir "$MOCKS_DIR") &
 RELAY_PID=$!
 
 sleep 1  # give relay a moment to bind
 
 echo "[run_dev] Starting mitmproxy on :${PROXY_PORT}"
-uv run mitmdump \
+(cd "$ORTHRUS_ROOT/packages/backend" && uv run mitmdump \
   --listen-port "$PROXY_PORT" \
-  --scripts addon.py \
+  --scripts "$ORTHRUS_ROOT/packages/backend/addon.py" \
   --ssl-insecure \
-  "$@" &
+  "$@") &
 MITM_PID=$!
 
 echo "[run_dev] Starting Vite dev server"
-(cd ui && bun run dev) &
+(cd "$ORTHRUS_ROOT" && bun run dev:web) &
 VITE_PID=$!
 
 cleanup() {

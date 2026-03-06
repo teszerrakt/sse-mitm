@@ -6,6 +6,7 @@ from typing import Any
 
 import aiohttp
 from aiohttp import web
+from pydantic import TypeAdapter
 
 from src.models import (
     ClientCmd,
@@ -113,9 +114,7 @@ async def _handle_command(
 
 def _parse_cmd(data: dict) -> Any:
     """Parse raw dict into a typed ClientCmd using Pydantic discriminated union."""
-    from pydantic import TypeAdapter
-
-    adapter = TypeAdapter(ClientCmd)
+    adapter: TypeAdapter[ClientCmd] = TypeAdapter(ClientCmd)
     return adapter.validate_python(data)
 
 

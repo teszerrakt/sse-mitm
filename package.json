@@ -1,0 +1,39 @@
+{
+  "name": "orthrus",
+  "private": true,
+  "workspaces": {
+    "packages": ["packages/*"],
+    "catalog": {
+      "react": "^19.2.0",
+      "react-dom": "^19.2.0",
+      "@types/react": "^19.2.7",
+      "@types/react-dom": "^19.2.3",
+      "typescript": "~5.9.3",
+      "tailwindcss": "^4.2.1",
+      "@tailwindcss/vite": "^4.2.1",
+      "@vitejs/plugin-react": "^5.1.1",
+      "vite": "^7.3.1",
+      "oxlint": "^1.51.0",
+      "oxfmt": "^0.36.0",
+      "@types/node": "^25.3.3"
+    }
+  },
+  "scripts": {
+    "dev": "./scripts/run_dev.sh",
+    "dev:web": "bun --cwd packages/web dev",
+    "dev:backend": "cd packages/backend && uv run python relay_server.py",
+    "build": "bun run build:web",
+    "start": "./scripts/run.sh",
+    "build:web": "bun --cwd packages/web build",
+    "lint": "bun run lint:web && bun run lint:backend",
+    "lint:web": "bun --cwd packages/web lint",
+    "lint:backend": "cd packages/backend && uv run ruff check .",
+    "fmt": "bun run fmt:web",
+    "fmt:web": "bun --cwd packages/web fmt",
+    "fmt:check": "bun --cwd packages/web fmt:check",
+    "typecheck": "bun run typecheck:web && bun run typecheck:backend",
+    "typecheck:web": "bun --cwd packages/web tsc -b",
+    "typecheck:backend": "cd packages/backend && uv run mypy src/ relay_server.py addon.py",
+    "install:all": "./scripts/install.sh"
+  }
+}

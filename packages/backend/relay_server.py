@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import os
 from pathlib import Path
 
 import aiohttp
@@ -24,7 +25,10 @@ from src.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
-UI_DIST = Path(__file__).parent / "ui" / "dist"
+_PROJECT_ROOT = Path(
+    os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent))
+)
+UI_DIST = _PROJECT_ROOT / "packages" / "web" / "dist"
 
 
 async def _ws_broadcaster(app: web.Application):
@@ -118,7 +122,7 @@ def create_app(mocks_dir: Path, auto_forward: bool = False) -> web.Application:
         app.router.add_get("/ui/{tail:.*}", serve_index)
     else:
         logger.warning(
-            "UI dist not found at %s — run 'cd ui && bun run build' first", UI_DIST
+            "UI dist not found at %s — run 'bun run build:web' first", UI_DIST
         )
 
     app.on_startup.append(on_startup)

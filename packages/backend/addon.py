@@ -15,7 +15,10 @@ from mitmproxy import tls
 
 logger = logging.getLogger(__name__)
 
-CONFIG_FILE = Path(__file__).parent / "config.json"
+_PROJECT_ROOT = Path(
+    os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent))
+)
+CONFIG_FILE = _PROJECT_ROOT / "config.json"
 
 _DEFAULT_CONFIG: dict[str, Any] = {
     "relay_host": "localhost",
@@ -122,7 +125,8 @@ class SSEInterceptorAddon:
     def responseheaders(self, flow: http.HTTPFlow) -> None:
         """Enable response streaming for SSE — mitmproxy must not buffer."""
         if flow.request.path.startswith("/relay?"):
-            flow.response.stream = True  # type: ignore[assignment]
+            if flow.response is not None:
+                flow.response.stream = True  # type: ignore[assignment]
 
     def tls_failed_client(self, data: tls.TlsData) -> None:
         """Notify relay/UI when a client TLS handshake fails."""

@@ -26,7 +26,7 @@ async def _run_cmd(*args: str) -> tuple[int, str, str]:
     )
     out, err = await proc.communicate()
     return (
-        proc.returncode,
+        proc.returncode or 0,
         out.decode("utf-8", errors="replace"),
         err.decode("utf-8", errors="replace"),
     )

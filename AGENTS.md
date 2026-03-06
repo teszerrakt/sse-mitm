@@ -27,7 +27,9 @@ Mobile/Browser → mitmproxy :28080 → relay server :29000 ↔ WebSocket ↔ Br
 ## Setup
 
 ```bash
-./install.sh          # installs uv deps + bun deps for ui/
+./scripts/install.sh          # installs uv deps + bun deps for workspace
+# or
+bun run install:all
 ```
 
 ---
@@ -37,22 +39,26 @@ Mobile/Browser → mitmproxy :28080 → relay server :29000 ↔ WebSocket ↔ Br
 ### Full stack
 
 ```bash
-./run_dev.sh          # relay server + mitmproxy + Vite dev server (concurrent, with cleanup)
-./run.sh              # relay server + mitmproxy + pre-built UI (production mode)
+./scripts/run_dev.sh          # relay server + mitmproxy + Vite dev server (concurrent, with cleanup)
+./scripts/run.sh              # relay server + mitmproxy + pre-built UI (production mode)
+
+# or from root workspace scripts
+bun run dev
+bun run start
 ```
 
 ### Python backend
 
 ```bash
-uv run python relay_server.py          # start relay server alone
-uv run mitmdump -s addon.py            # start mitmproxy alone
+cd packages/backend && uv run python relay_server.py          # start relay server alone
+cd packages/backend && uv run mitmdump -s addon.py            # start mitmproxy alone
 ```
 
 ### UI frontend
 
 ```bash
-cd ui && bun run dev          # Vite dev server (proxies /relay, /ws, /sessions etc. to :29000)
-cd ui && bun run build        # production build → ui/dist/
+bun --cwd packages/web run dev          # Vite dev server (proxies /relay, /ws, /sessions etc. to :29000)
+bun --cwd packages/web run build        # production build → packages/web/dist/
 ```
 
 ---
@@ -62,18 +68,18 @@ cd ui && bun run build        # production build → ui/dist/
 ### Python
 
 ```bash
-uv run ruff check .                          # lint
-uv run ruff check --fix .                    # lint + auto-fix
-uv run mypy src/ relay_server.py addon.py    # type-check
+cd packages/backend && uv run ruff check .                          # lint
+cd packages/backend && uv run ruff check --fix .                    # lint + auto-fix
+cd packages/backend && uv run mypy src/ relay_server.py addon.py    # type-check
 ```
 
 ### TypeScript / React
 
 ```bash
-cd ui && bun run lint           # oxlint src/
-cd ui && bun run lint:fix       # oxlint --fix src/
-cd ui && bun run fmt            # oxfmt src/
-cd ui && bun run fmt:check      # oxfmt --check src/
+bun --cwd packages/web run lint           # oxlint src/
+bun --cwd packages/web run lint:fix       # oxlint --fix src/
+bun --cwd packages/web run fmt            # oxfmt src/
+bun --cwd packages/web run fmt:check      # oxfmt --check src/
 ```
 
 > **Note:** The linter is `oxlint` (not ESLint) and the formatter is `oxfmt` (not Prettier).
@@ -168,13 +174,13 @@ logger = logging.getLogger(__name__)   # one logger per module, at module level
 ### Styling
 
 - **Tailwind CSS v4** — utility classes on elements.
-- **CSS custom properties** define the design tokens (see `ui/src/index.css`): `--bg`, `--bg-panel`, `--border`, `--text`, `--accent`, `--success`, `--warning`, `--danger`.
+- **CSS custom properties** define the design tokens (see `packages/web/src/index.css`): `--bg`, `--bg-panel`, `--border`, `--text`, `--accent`, `--success`, `--warning`, `--danger`.
 - Use `clsx` / `tailwind-merge` for conditional class composition.
 - Use `class-variance-authority` (cva) for component variant patterns.
 
 ### Imports
 
-- Use relative imports within `ui/src/`.
+- Use relative imports within `packages/web/src/`.
 - No path aliases configured; keep imports relative and explicit.
 
 ---
@@ -183,34 +189,49 @@ logger = logging.getLogger(__name__)   # one logger per module, at module level
 
 ```
 orthrus/
-├── addon.py              # mitmproxy addon (intercepts SSE traffic)
-├── relay_server.py       # aiohttp web server + WebSocket relay
-├── src/
-│   ├── models.py         # Pydantic data models (shared types)
-│   ├── session.py        # session state
-│   ├── session_manager.py
-│   ├── sse_client.py     # upstream SSE client
-│   ├── sse_parser.py     # stateful SSE stream parser
-│   ├── mock_loader.py    # loads mock JSON from MOCKS_DIR
-│   ├── pipeline_runner.py
-│   └── handlers/         # one aiohttp route handler per file
-│       ├── relay.py
-│       ├── replay.py
-│       ├── sessions.py
-│       ├── websocket.py
-│       ├── config.py
-│       └── cert.py
-├── ui/
-│   ├── src/
-│   │   ├── components/   # React components (PascalCase.tsx)
-│   │   ├── hooks/        # custom hooks (useX.ts)
-│   │   ├── types/        # shared TypeScript types (index.ts)
-│   │   └── utils/        # utility functions
-│   ├── src-tauri/        # Tauri native app shell (macOS)
-│   └── vite.config.ts
-├── mocks/                # mock JSON files (gitignored except _example_*)
-├── pyproject.toml        # Python project config (uv, ruff, mypy, pytest)
-├── install.sh
-├── run.sh
-└── run_dev.sh
+├── package.json                    # bun workspace root + orchestration scripts
+├── pyproject.toml                  # uv workspace root
+├── uv.lock
+├── .python-version
+├── config.json
+├── AGENTS.md
+├── README.md
+├── scripts/
+│   ├── install.sh
+│   ├── run.sh
+│   └── run_dev.sh
+├── mocks/                          # mock JSON files (gitignored except _example_*)
+├── docs/
+│   ├── 001-implementation-plan.md
+│   └── 002-monorepo-migration.md
+└── packages/
+    ├── web/                        # React frontend
+    │   ├── package.json            # name: orthrus-web
+    │   ├── vite.config.ts
+    │   └── src/
+    │       ├── components/         # React components (PascalCase.tsx)
+    │       ├── hooks/              # custom hooks (useX.ts)
+    │       ├── types/              # shared TypeScript types (index.ts)
+    │       └── utils/              # utility functions
+    ├── desktop/                    # Tauri v2 placeholder
+    │   ├── package.json
+    │   └── README.md
+    └── backend/                    # Python backend
+        ├── relay_server.py         # aiohttp web server + WebSocket relay
+        ├── addon.py                # mitmproxy addon (intercepts SSE traffic)
+        └── src/
+            ├── models.py           # Pydantic data models (shared types)
+            ├── session.py          # session state
+            ├── session_manager.py
+            ├── sse_client.py       # upstream SSE client
+            ├── sse_parser.py       # stateful SSE stream parser
+            ├── mock_loader.py      # loads mock JSON from MOCKS_DIR
+            ├── pipeline_runner.py
+            └── handlers/           # one aiohttp route handler per file
+                ├── relay.py
+                ├── replay.py
+                ├── sessions.py
+                ├── websocket.py
+                ├── config.py
+                └── cert.py
 ```

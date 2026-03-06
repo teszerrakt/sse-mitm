@@ -1,26 +1,30 @@
-# Python-generated files
+# Python
 __pycache__/
 *.py[oc]
+
+# Build artifacts
 build/
 dist/
-wheels/
-*.egg-info
+packages/web/dist/
 
-# Virtual environments
-.venv
+# Dependencies
+.venv/
+node_modules/
 
-# UI build output and deps
-ui/dist/
-ui/node_modules/
+# Mocks (keep examples)
+mocks/*.json
+!mocks/_example_*.json
 
-# Editor
+# IDE / OS
 .DS_Store
 .idea/
 .vscode/
 
-# mitmproxy state
+# mitmproxy
 ~/.mitmproxy/
 
-# Mock sessions (user data)
-mocks/*.json
-!mocks/_example_*.json
+# Tauri (future)
+packages/desktop/src-tauri/target/
+
+# Misc
+.ruff_cache/

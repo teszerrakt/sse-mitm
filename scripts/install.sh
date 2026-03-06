@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export ORTHRUS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 MISSING=0
 
 echo "Checking prerequisites..."
@@ -33,6 +36,7 @@ fi
 
 # --- Ensure project Python version via uv ---
 echo "[install] Ensuring Python from .python-version via uv..."
+cd "$ORTHRUS_ROOT"
 uv python install
 PY_VERSION=$(uv run python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 echo "  ✓ Python $PY_VERSION"
@@ -43,13 +47,14 @@ uv sync
 
 echo ""
 
-# --- Install Node modules ---
+# --- Install Node modules (bun workspace resolves all packages/*) ---
 echo "[install] Installing Node modules..."
-cd ui && bun install
+cd "$ORTHRUS_ROOT"
+bun install
 
 echo ""
 echo "[install] Done."
 echo ""
-echo "  Build UI:  cd ui && bun run build && cd .."
-echo "  Run:       ./run.sh        (production)"
-echo "  Run:       ./run_dev.sh    (development, Vite HMR)"
+echo "  Build UI:  bun run build:web"
+echo "  Run:       ./scripts/run.sh        (production)"
+echo "  Run:       ./scripts/run_dev.sh    (development, Vite HMR)"

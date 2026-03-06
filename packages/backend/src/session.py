@@ -14,6 +14,7 @@ from src.models import (
     MockConfig,
     MockStep,
     PassthroughStep,
+    PipelineStep,
     RequestInfo,
     SessionInfo,
     SessionStatus,
@@ -209,7 +210,7 @@ class Session:
         parsed = urlparse(self.request.url)
         url_pattern = _re.escape(parsed.path)
 
-        steps = []
+        steps: list[PipelineStep] = []
         for entry in self._history:
             if entry.action == EventAction.FORWARD:
                 steps.append(

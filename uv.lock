@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.14'",
 ]
 
+[manifest]
+members = [
+    "orthrus",
+    "orthrus-workspace",
+]
+
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
@@ -1068,7 +1074,7 @@ wheels = [
 [[package]]
 name = "orthrus"
 version = "0.1.0"
-source = { virtual = "." }
+source = { virtual = "packages/backend" }
 dependencies = [
     { name = "aiohttp" },
     { name = "mitmproxy" },
@@ -1099,6 +1105,11 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "ruff", specifier = ">=0.15.4" },
 ]
+
+[[package]]
+name = "orthrus-workspace"
+version = "0.0.0"
+source = { virtual = "." }
 
 [[package]]
 name = "packaging"

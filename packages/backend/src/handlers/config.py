@@ -10,7 +10,8 @@ from aiohttp import web
 
 logger = logging.getLogger(__name__)
 
-CONFIG_FILE = Path(__file__).parents[2] / "config.json"
+_PROJECT_ROOT = Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parents[3])))
+CONFIG_FILE = _PROJECT_ROOT / "config.json"
 
 _DEFAULT_CONFIG = {
     "sse_patterns": ["*/sse*", "*/stream*"],
