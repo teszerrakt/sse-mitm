@@ -6,7 +6,7 @@ PROXY_PORT="${PROXY_PORT:-28080}"
 MOCKS_DIR="${MOCKS_DIR:-./mocks}"
 
 # Detect the machine's LAN IP (the address other devices can reach us on)
-LAN_IP=$(python3 -c "
+LAN_IP=$(uv run python -c "
 import socket
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
