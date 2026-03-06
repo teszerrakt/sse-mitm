@@ -68,7 +68,20 @@ export interface SessionUpdatedMsg {
   session: SessionInfo;
 }
 
-export type ServerMsg = NewSessionMsg | EventMsg | StreamEndMsg | ErrorMsg | SessionUpdatedMsg;
+export interface TlsErrorMsg {
+  type: "tls_error";
+  client_ip: string;
+  sni: string | null;
+  timestamp: number;
+}
+
+export type ServerMsg =
+  | NewSessionMsg
+  | EventMsg
+  | StreamEndMsg
+  | ErrorMsg
+  | SessionUpdatedMsg
+  | TlsErrorMsg;
 
 // ── WebSocket UI → Server commands ───────────────────────────────────────────
 
@@ -147,4 +160,13 @@ export interface AppConfig {
   relay_host: string;
   relay_port: number;
   proxy_address: string;
+}
+
+export interface CertStatus {
+  platform: string;
+  auto_install_supported: boolean;
+  cert_exists: boolean;
+  cert_path: string;
+  installed: boolean;
+  message: string | null;
 }

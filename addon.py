@@ -3,11 +3,15 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
+from urllib import error as url_error
+from urllib import request as url_request
 from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
 from mitmproxy import http
+from mitmproxy import tls
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +25,8 @@ _DEFAULT_CONFIG: dict[str, Any] = {
         "*/stream*",
     ],
 }
+
+_TLS_ERROR_DEBOUNCE_SEC = 5.0
 
 
 def _load_config() -> dict[str, Any]:
@@ -48,6 +54,7 @@ class SSEInterceptorAddon:
         self._relay_port: int = int(config["relay_port"])
         self._patterns: list[str] = list(config["sse_patterns"])
         self._config_mtime: float = self._get_config_mtime()
+        self._last_tls_error_at: dict[tuple[str, str | None], float] = {}
         logger.info(
             "SSE interceptor ready — relay at %s:%d, patterns: %s",
             self._relay_host,
@@ -112,8 +119,47 @@ class SSEInterceptorAddon:
         if flow.request.path.startswith("/relay?"):
             flow.response.stream = True  # type: ignore[assignment]
 
+    def tls_failed_client(self, data: tls.TlsData) -> None:
+        """Notify relay/UI when a client TLS handshake fails."""
+        peer = data.conn.peername
+        client_ip = str(peer[0]) if peer else "unknown"
+        sni = data.context.client.sni
+        now = time.time()
+        key = (client_ip, sni)
+        last = self._last_tls_error_at.get(key, 0.0)
+        if (now - last) < _TLS_ERROR_DEBOUNCE_SEC:
+            return
+
+        self._last_tls_error_at[key] = now
+        logger.warning(
+            "TLS handshake failed from client=%s sni=%s (likely untrusted mitm cert)",
+            client_ip,
+            sni,
+        )
+        self._notify_tls_error(client_ip=client_ip, sni=sni, timestamp=now)
+
     def _is_sse_request(self, url: str) -> bool:
         return any(fnmatch(url, p) for p in self._patterns)
+
+    def _notify_tls_error(
+        self, *, client_ip: str, sni: str | None, timestamp: float
+    ) -> None:
+        payload = {
+            "client_ip": client_ip,
+            "sni": sni,
+            "timestamp": timestamp,
+        }
+        try:
+            req = url_request.Request(
+                url=f"http://{self._relay_host}:{self._relay_port}/tls-error",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with url_request.urlopen(req, timeout=0.5):
+                pass
+        except (url_error.URLError, TimeoutError) as exc:
+            logger.debug("Failed to publish tls_error to relay: %s", exc)
 
 
 def _url_encode(url: str) -> str:

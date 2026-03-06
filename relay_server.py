@@ -8,6 +8,12 @@ from pathlib import Path
 import aiohttp
 from aiohttp import web
 
+from src.handlers.cert import (
+    get_cert_download_handler,
+    get_cert_status_handler,
+    post_cert_install_handler,
+    post_tls_error_handler,
+)
 from src.handlers.config import get_config_handler, put_config_handler
 from src.handlers.relay import relay_handler
 from src.handlers.replay import replay_handler
@@ -74,6 +80,10 @@ def create_app(mocks_dir: Path, auto_forward: bool = False) -> web.Application:
     app.router.add_post("/replay", replay_handler)
     app.router.add_get("/config", get_config_handler)
     app.router.add_put("/config", put_config_handler)
+    app.router.add_get("/cert", get_cert_download_handler)
+    app.router.add_get("/cert/status", get_cert_status_handler)
+    app.router.add_post("/cert/install", post_cert_install_handler)
+    app.router.add_post("/tls-error", post_tls_error_handler)
 
     # Serve React UI build artifacts
     if UI_DIST.exists():

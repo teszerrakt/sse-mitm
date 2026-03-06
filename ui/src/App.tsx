@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Settings, Copy, Check } from "lucide-react";
 import { useSessions } from "./hooks/useSessions";
 import { useConfig } from "./hooks/useConfig";
+import { CertWarning } from "./components/CertWarning";
 import { NetworkTab } from "./components/NetworkTab";
 import { SessionDetail } from "./components/SessionDetail";
 import { SettingsPage } from "./components/SettingsPage";
@@ -16,6 +17,7 @@ export default function App() {
   const {
     sessions,
     selectedId,
+    latestTlsError,
     setSelectedId,
     forward,
     edit,
@@ -42,6 +44,8 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      <CertWarning latestTlsError={latestTlsError} />
+
       {/* Top bar */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
         <span className="text-[var(--text)] font-semibold text-base tracking-tight">

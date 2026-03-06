@@ -143,7 +143,6 @@ async def relay_handler(request: web.Request) -> web.StreamResponse:
         heartbeat_task.cancel()
         upstream_task.cancel()
         await session.close_stream()
-        session.status.__class__  # noqa: keep alive
         await ws_broadcaster(
             StreamEndMsg(type="stream_end", session_id=session.id).model_dump_json()
         )

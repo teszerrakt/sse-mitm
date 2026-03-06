@@ -233,6 +233,14 @@ class SessionUpdatedMsg(BaseModel):
     session: SessionInfo
 
 
+class TlsErrorMsg(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    type: Literal["tls_error"]
+    client_ip: str
+    sni: str | None = None
+    timestamp: float
+
+
 ServerMsg = Annotated[
     Union[
         NewSessionMsg,
@@ -240,6 +248,7 @@ ServerMsg = Annotated[
         StreamEndMsg,
         ErrorMsg,
         SessionUpdatedMsg,
+        TlsErrorMsg,
     ],
     Field(discriminator="type"),
 ]
