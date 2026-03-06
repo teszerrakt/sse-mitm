@@ -15,25 +15,6 @@ Restructure orthrus from a flat project into a `packages/*` monorepo using bun
 workspaces (JS/TS) and uv workspaces (Python), preparing for a native macOS app
 (Tauri v2) alongside the existing web UI and Python backend.
 
-## Execution Strategy
-
-- Perform migration in small, reversible phases.
-- Keep runtime behavior unchanged (same ports, same config, same mocks).
-- Validate after each major phase before continuing.
-- Prefer absolute root-based paths in scripts via `ORTHRUS_ROOT` to avoid CWD bugs.
-
-## Preconditions
-
-- Work from a dedicated branch (e.g. `chore/monorepo-migration`).
-- Ensure working tree is clean before Phase 1.
-- Keep one safety commit/tag before any file moves.
-
-```bash
-git status
-git checkout -b chore/monorepo-migration
-git add -A && git commit -m "chore: snapshot before monorepo migration"
-```
-
 ## Target Structure
 
 ```
@@ -153,8 +134,7 @@ packages, and orchestration scripts that delegate to each package.
     "dev": "./scripts/run_dev.sh",
     "dev:web": "bun --cwd packages/web dev",
     "dev:backend": "cd packages/backend && uv run python relay_server.py",
-    "build": "bun run build:web",
-    "start": "./scripts/run.sh",
+    "build": "./scripts/run.sh",
     "build:web": "bun --cwd packages/web build",
     "lint": "bun run lint:web && bun run lint:backend",
     "lint:web": "bun --cwd packages/web lint",
@@ -182,13 +162,6 @@ packages, and orchestration scripts that delegate to each package.
 
 No other changes needed — all tsconfig paths, vite config, and source imports
 are relative within the directory and move as a unit.
-
-Checkpoint:
-
-```bash
-bun --cwd packages/web run lint
-bun --cwd packages/web run tsc -b
-```
 
 ---
 
@@ -267,13 +240,6 @@ _PROJECT_ROOT = Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parents[3
 CONFIG_FILE = _PROJECT_ROOT / "config.json"
 ```
 
-Checkpoint:
-
-```bash
-cd packages/backend && uv run ruff check .
-cd packages/backend && uv run mypy src/ relay_server.py addon.py
-```
-
 ---
 
 ### Phase 5: Create `packages/desktop/` placeholder
@@ -330,7 +296,7 @@ Key changes in all three scripts:
 
 **`scripts/run.sh`** changes:
 - UI hash/build paths: `ui/src`, `ui/index.html`, etc. → `$ORTHRUS_ROOT/packages/web/src`, etc.
-- UI build command: `(cd "$ORTHRUS_ROOT" && bun run build:web)`
+- UI build command: `(cd ui && bun run build)` → `bun run build:web`
 - UI dist hash file: `ui/dist/.build_hash` → `$ORTHRUS_ROOT/packages/web/dist/.build_hash`
 - Backend start: `uv run python relay_server.py` →
   `(cd "$ORTHRUS_ROOT/packages/backend" && uv run python relay_server.py --port ...)`
@@ -339,7 +305,7 @@ Key changes in all three scripts:
 **`scripts/run_dev.sh`** changes:
 - Backend start: same as `run.sh`
 - Addon path: same as `run.sh`
-- Vite start: `(cd "$ORTHRUS_ROOT" && bun run dev:web)`
+- Vite start: `(cd ui && bun run dev)` → `bun run dev:web`
 
 ---
 
@@ -404,21 +370,6 @@ reflect the monorepo layout.
 
 ---
 
-### Phase 10: Final Cutover + Rollback Notes
-
-Before marking migration done:
-
-1. Run all verification commands from this document.
-2. Confirm dev and prod scripts still expose the same behavior/ports.
-3. Squash obvious fixup commits into clear migration commits.
-
-Rollback (if needed):
-
-- Reset branch to the pre-migration snapshot commit.
-- Re-run old root scripts to confirm prior behavior is restored.
-
----
-
 ## Verification Checklist
 
 After migration, verify the following all work:
@@ -434,16 +385,6 @@ After migration, verify the following all work:
 - [ ] `bun run typecheck` passes from root
 - [ ] `cd packages/backend && uv run ruff check .` passes
 - [ ] `cd packages/backend && uv run mypy src/ relay_server.py addon.py` passes
-
-Suggested verification run order:
-
-```bash
-./scripts/install.sh
-bun run lint
-bun run typecheck
-./scripts/run_dev.sh
-./scripts/run.sh
-```
 
 ---
 
