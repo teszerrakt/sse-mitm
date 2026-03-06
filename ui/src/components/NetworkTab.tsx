@@ -49,7 +49,7 @@ export function NetworkTab({
   onClearTlsError,
   proxyAddress,
 }: Props) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editingIp, setEditingIp] = useState<string | null>(null);
   const [editingAlias, setEditingAlias] = useState("");
   const [certModalIp, setCertModalIp] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function NetworkTab({
     (certModalIp ? aliases[certModalIp] : null) || selectedOs.os || "Unknown";
 
   const toggleGroup = (key: string) => {
-    setExpanded((prev) => {
+    setCollapsed((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -132,7 +132,7 @@ export function NetworkTab({
           const groupAlias = group.ip
             ? aliases[group.ip] || osInfo.os
             : "Unknown";
-          const isExpanded = expanded.has(group.key);
+          const isExpanded = !collapsed.has(group.key);
           const showTlsWarning = group.ip ? tlsErrorIps.has(group.ip) : false;
 
           return (
