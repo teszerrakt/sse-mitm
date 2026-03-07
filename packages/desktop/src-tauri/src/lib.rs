@@ -90,10 +90,28 @@ pub fn run() {
                 // --- Spawn backend sidecar ---
                 log(&log_handle, "[setup] spawning sidecar 'orthrus-backend'...");
 
+                // Use ~/Library/Application Support/com.teszerrakt.orthrus/mocks
+                // as the writable mocks directory (PyInstaller runs from a read-only temp dir)
+                let mocks_dir = dirs::data_dir()
+                    .map(|d| d.join("com.teszerrakt.orthrus").join("mocks"))
+                    .unwrap_or_else(|| PathBuf::from("mocks"));
+
+                // Ensure the mocks directory exists
+                if let Err(e) = fs::create_dir_all(&mocks_dir) {
+                    log(&log_handle, &format!("[setup] failed to create mocks dir: {e}"));
+                }
+
+                let mocks_dir_str = mocks_dir.to_string_lossy().to_string();
+                log(&log_handle, &format!("[setup] mocks dir: {mocks_dir_str}"));
+
                 let sidecar_result = app
                     .shell()
                     .sidecar("orthrus-backend")
-                    .map(|cmd| cmd.args(["--relay-port", "29000", "--proxy-port", "28080"]));
+                    .map(|cmd| cmd.args([
+                        "--relay-port", "29000",
+                        "--proxy-port", "28080",
+                        "--mocks-dir", &mocks_dir_str,
+                    ]));
 
                 match sidecar_result {
                     Ok(sidecar) => match sidecar.spawn() {
