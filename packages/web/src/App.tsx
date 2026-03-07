@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
+import { useHotkey } from "@tanstack/react-hotkeys";
+import { EditorView } from "@codemirror/view";
+import { openSearchPanel } from "@codemirror/search";
 import { Settings, Trash2 } from "lucide-react";
 import { useSessions } from "./hooks/useSessions";
 import { useConfig } from "./hooks/useConfig";
@@ -43,6 +46,20 @@ export default function App() {
   } = useSessions();
 
   const selected = selectedId ? sessions[selectedId] : null;
+
+  // Global Cmd/Ctrl+F: open CodeMirror search panel in the nearest editor.
+  // In Tauri/WebKit the read-only editor may not have keyboard focus even after
+  // clicking, so we walk up from the active element to find a .cm-editor and
+  // dispatch the search command to its EditorView.
+  useHotkey("Mod+F", () => {
+    const active = document.activeElement;
+    if (!active) return;
+    // Walk up from the focused element to find the enclosing CodeMirror editor
+    const editorEl = active.closest(".cm-editor");
+    if (!editorEl) return;
+    const view = EditorView.findFromDOM(editorEl as HTMLElement);
+    if (view) openSearchPanel(view);
+  });
 
   if (view === "settings") {
     return <SettingsPage onBack={() => setView("inspector")} />;

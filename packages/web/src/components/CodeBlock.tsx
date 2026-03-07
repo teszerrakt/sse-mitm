@@ -97,6 +97,11 @@ const searchExtension = search({ top: true });
 // Shared base extensions (language + themes + search)
 const BASE_EXTENSIONS = [json(), oneDark, orthrusTheme, searchExtension];
 
+// When editable=false, CodeMirror's content DOM has no tabindex, so it can't
+// receive keyboard focus and key events (including Cmd+F) never fire.
+// Adding tabindex="0" lets the user click-to-focus the read-only editor.
+const focusableReadOnly = EditorView.contentAttributes.of({ tabindex: "0" });
+
 // In read-only mode, hide the replace toggle and replace row from the search
 // panel. We scope styles under `.cm-readonly` (which CodeMirror adds when
 // readOnly is set) so editable editors are unaffected.
@@ -147,9 +152,12 @@ export function CodeBlock({
   const displayValue = prettyPrint ? tryPretty(value) : value;
   const showLineNumbers = lineNumbers ?? !readOnly;
 
-  // In read-only mode, add the theme that hides the replace UI
+  // In read-only mode: make focusable + hide the replace UI
   const extensions = useMemo(
-    () => (readOnly ? [...BASE_EXTENSIONS, hideReplaceTheme] : BASE_EXTENSIONS),
+    () =>
+      readOnly
+        ? [...BASE_EXTENSIONS, focusableReadOnly, hideReplaceTheme]
+        : BASE_EXTENSIONS,
     [readOnly],
   );
 
