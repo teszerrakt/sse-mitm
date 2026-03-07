@@ -13,6 +13,7 @@ import { MainTitleBar } from "./components/MainTitleBar";
 import { AppFooter } from "./components/AppFooter";
 import { VersionInfo } from "./components/VersionInfo";
 import { SplashScreen } from "./components/SplashScreen";
+import orthrusLogo from "./assets/orthrus.png";
 
 type View = "inspector" | "settings";
 
@@ -126,8 +127,20 @@ export default function App() {
               onSave={(filename) => saveSession(selected.info.id, filename)}
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
-              Select a session to inspect events
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
+              <img
+                src={orthrusLogo}
+                alt=""
+                className="w-12 h-12 rounded-sm object-cover opacity-10"
+              />
+              <div className="flex flex-col gap-1">
+                <span className="text-[var(--text-muted)] text-sm">
+                  Select a session to inspect events
+                </span>
+                <span className="text-[var(--text-dim)] text-xs">
+                  Forward, edit, drop, or inject SSE events in real time
+                </span>
+              </div>
             </div>
           )}
         </div>

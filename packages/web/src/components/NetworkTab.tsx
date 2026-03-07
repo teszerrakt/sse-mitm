@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Pencil, Shield } from "lucide-react";
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight, Pencil, Radio, Shield } from "lucide-react";
 import type { SessionState } from "../types";
 import { CertModal } from "./CertModal";
 import { detectOS } from "../utils/detectOS";
@@ -121,12 +121,12 @@ export function NetworkTab({
         SSE Sessions
       </div>
 
-      {groups.length === 0 && (
-        <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] text-sm px-4 text-center">
-          Waiting for SSE requests...
+      {groups.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-[var(--text-muted)] px-4 text-center">
+          <Radio size={28} className="opacity-30 animate-pulse" />
+          <span className="text-sm">Waiting for SSE requests...</span>
         </div>
-      )}
-
+      ) : (
       <div className="flex-1 overflow-y-auto">
         {groups.map((group) => {
           const first = group.sessions[0];
@@ -286,6 +286,7 @@ export function NetworkTab({
           );
         })}
       </div>
+      )}
 
       <CertModal
         open={Boolean(certModalIp)}
