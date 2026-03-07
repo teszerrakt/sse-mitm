@@ -7,7 +7,7 @@ declare const __COMMIT_HASH__: string;
  */
 export function VersionInfo() {
   return (
-    <span className="text-xs text-[var(--text-dim)] font-mono select-none">
+    <span className="text-xs text-dim font-mono select-none">
       v{__APP_VERSION__}-{__COMMIT_HASH__}
     </span>
   );

@@ -88,7 +88,7 @@ export default function App() {
         )}
         <div className="ml-auto flex items-center gap-2">
           <span
-            className={`text-[var(--text-muted)] ${isTauri() ? "text-xs" : "text-sm"}`}
+            className={`text-muted-foreground ${isTauri() ? "text-xs" : "text-sm"}`}
           >
             {Object.keys(sessions).length} session
             {Object.keys(sessions).length !== 1 ? "s" : ""}
@@ -98,7 +98,7 @@ export default function App() {
               variant="ghost"
               size={isTauri() ? "icon-xs" : "icon-sm"}
               onClick={() => setShowClearConfirm(true)}
-              className="hover:text-[var(--danger)] hover:bg-[var(--bg-hover)]"
+              className="hover:text-danger hover:bg-hover"
               title="Clear all sessions"
             >
               <Trash2 size={isTauri() ? 13 : 16} />
@@ -108,7 +108,7 @@ export default function App() {
             variant="ghost"
             size={isTauri() ? "icon-xs" : "icon-sm"}
             onClick={() => setView("settings")}
-            className="hover:bg-[var(--bg-hover)]"
+            className="hover:bg-hover"
             title="Settings"
           >
             <Settings size={isTauri() ? 14 : 18} />
@@ -154,10 +154,10 @@ export default function App() {
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
               <img src={boredOrthrus} alt="" className="w-56 opacity-50" />
               <div className="flex flex-col gap-1">
-                <span className="text-[var(--text-muted)] text-sm">
+                <span className="text-muted-foreground text-sm">
                   Select a session to inspect events
                 </span>
-                <span className="text-[var(--text-dim)] text-xs">
+                <span className="text-dim text-xs">
                   Forward, edit, drop, or inject SSE events in real time
                 </span>
               </div>

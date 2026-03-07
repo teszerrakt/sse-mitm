@@ -11,31 +11,31 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
-          "bg-[var(--danger)] text-white hover:bg-[var(--danger)]/80",
+          "bg-danger text-white hover:bg-danger/80",
         outline:
-          "border border-[var(--border)] bg-transparent text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)] transition-colors",
+          "border border-border bg-transparent text-muted-foreground hover:text-foreground hover:bg-hover transition-colors",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
-          "hover:bg-[var(--bg-hover)] hover:text-[var(--text)] text-[var(--text-muted)]",
+          "hover:bg-hover hover:text-foreground text-muted-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         /* ── Orthrus semantic variants ─────────────────────────── */
         success:
-          "text-[var(--success)] border border-[var(--success)]/40 bg-transparent hover:bg-[var(--success)]/10 transition-colors",
+          "text-success border border-success/40 bg-transparent hover:bg-success/10 transition-colors",
         warning:
-          "text-[var(--warning)] border border-[var(--warning)]/40 bg-transparent hover:bg-[var(--warning)]/10 transition-colors",
+          "text-warning border border-warning/40 bg-transparent hover:bg-warning/10 transition-colors",
         danger:
-          "text-[var(--danger)] border border-[var(--danger)]/40 bg-transparent hover:bg-[var(--danger)]/10 transition-colors",
+          "text-danger border border-danger/40 bg-transparent hover:bg-danger/10 transition-colors",
         accent:
-          "text-[var(--accent)] border border-[var(--accent)]/40 bg-transparent hover:bg-[var(--accent)]/10 transition-colors",
+          "text-accent border border-accent/40 bg-transparent hover:bg-accent/10 transition-colors",
         inject:
-          "text-[var(--inject)] border border-[var(--inject)]/40 bg-transparent hover:bg-[var(--inject)]/10 transition-colors",
+          "text-inject border border-inject/40 bg-transparent hover:bg-inject/10 transition-colors",
         "success-solid":
-          "bg-[var(--success)] text-white hover:bg-[var(--success)]/90",
+          "bg-success text-white hover:bg-success/90",
         "warning-solid":
-          "bg-[var(--warning)] text-black hover:opacity-90",
+          "bg-warning text-black hover:opacity-90",
         "inject-solid":
-          "bg-[var(--inject)] text-white hover:opacity-90",
+          "bg-inject text-white hover:opacity-90",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

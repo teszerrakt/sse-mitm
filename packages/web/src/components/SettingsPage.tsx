@@ -87,7 +87,7 @@ export function SettingsPage({ onBack }: Props) {
       </TauriTitleBar>
 
       {/* Settings header */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
+      <div className="flex items-center gap-3 px-6 py-3 border-b border-border bg-panel shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -97,15 +97,15 @@ export function SettingsPage({ onBack }: Props) {
           <ArrowLeft size={16} />
           <span>Back</span>
         </Button>
-        <span className="text-[var(--text)] font-semibold text-base tracking-tight">Settings</span>
+        <span className="text-foreground font-semibold text-base tracking-tight">Settings</span>
       </div>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-8">
-        {loading && <p className="text-[var(--text-muted)] text-sm">Loading config…</p>}
+        {loading && <p className="text-muted-foreground text-sm">Loading config…</p>}
 
         {error && (
-          <div className="rounded px-3 py-2 bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] text-sm">
+          <div className="rounded px-3 py-2 bg-danger/10 border border-danger/30 text-danger text-sm">
             Failed to load config: {error}
           </div>
         )}
@@ -115,12 +115,12 @@ export function SettingsPage({ onBack }: Props) {
             {/* Intercept Patterns */}
             <section>
               <div className="mb-3">
-                <h2 className="text-[var(--text)] text-sm font-semibold uppercase tracking-widest">
+                <h2 className="text-foreground text-sm font-semibold uppercase tracking-widest">
                   Intercept Patterns
                 </h2>
-                <p className="text-[var(--text-muted)] text-sm mt-1">
+                <p className="text-muted-foreground text-sm mt-1">
                   Glob patterns matched against the full request URL. Use{" "}
-                  <code className="text-[var(--accent)] bg-[var(--bg)] px-1 rounded">*</code> as
+                  <code className="text-accent bg-background px-1 rounded">*</code> as
                   wildcard.
                 </p>
               </div>
@@ -141,7 +141,7 @@ export function SettingsPage({ onBack }: Props) {
                       size="icon-xs"
                       onClick={() => handleRemovePattern(idx)}
                       disabled={effectivePatterns.length <= 1}
-                      className="hover:text-[var(--danger)] hover:bg-[var(--danger)]/10"
+                      className="hover:text-danger hover:bg-danger/10"
                       title="Remove pattern"
                     >
                       <X size={14} />
@@ -163,15 +163,15 @@ export function SettingsPage({ onBack }: Props) {
 
             {/* Server Info */}
             <section>
-              <h2 className="text-[var(--text)] text-sm font-semibold uppercase tracking-widest mb-3">
+              <h2 className="text-foreground text-sm font-semibold uppercase tracking-widest mb-3">
                 Server Info
               </h2>
-              <div className="rounded border border-[var(--border)] divide-y divide-[var(--border)] overflow-hidden">
+              <div className="rounded border border-border divide-y divide-border overflow-hidden">
                 <InfoRow label="Relay Host" value={config.relay_host} />
                 <InfoRow label="Relay Port" value={String(config.relay_port)} />
               </div>
-              <p className="text-[var(--text-muted)] text-sm mt-2">
-                To change host/port, edit <code className="text-[var(--text)]">config.json</code>{" "}
+              <p className="text-muted-foreground text-sm mt-2">
+                To change host/port, edit <code className="text-foreground">config.json</code>{" "}
                 and restart.
               </p>
             </section>
@@ -186,12 +186,12 @@ export function SettingsPage({ onBack }: Props) {
               </Button>
 
               {saveStatus === "saved" && (
-                <span className="text-[var(--success)] text-sm">
+                <span className="text-success text-sm">
                   Saved — mitmproxy will pick up changes on the next request.
                 </span>
               )}
               {saveStatus === "error" && saveError && (
-                <span className="text-[var(--danger)] text-sm">{saveError}</span>
+                <span className="text-danger text-sm">{saveError}</span>
               )}
             </section>
           </>
@@ -207,9 +207,9 @@ export function SettingsPage({ onBack }: Props) {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center px-3 py-2 bg-[var(--bg-panel)]">
-      <span className="w-28 text-[var(--text-muted)] text-sm shrink-0">{label}</span>
-      <span className="text-[var(--text)] text-sm font-mono">{value}</span>
+    <div className="flex items-center px-3 py-2 bg-panel">
+      <span className="w-28 text-muted-foreground text-sm shrink-0">{label}</span>
+      <span className="text-foreground text-sm font-mono">{value}</span>
     </div>
   );
 }

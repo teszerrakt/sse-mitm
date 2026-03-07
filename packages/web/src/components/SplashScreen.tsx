@@ -9,14 +9,14 @@ interface SplashScreenProps {
 
 export const SplashScreen: FC<SplashScreenProps> = ({ fadeOut, onComplete }) => (
   <div
-    className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[var(--bg)] transition-opacity duration-300 ${fadeOut ? "opacity-0" : "opacity-100"}`}
+    className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-background transition-opacity duration-300 ${fadeOut ? "opacity-0" : "opacity-100"}`}
     onTransitionEnd={() => {
       if (fadeOut) onComplete();
     }}
   >
     {/* Logo with pulse glow */}
     <div className="relative mb-8">
-      <div className="absolute inset-0 rounded-full bg-[var(--accent)] opacity-20 blur-2xl animate-[splash-glow_2s_ease-in-out_infinite]" />
+      <div className="absolute inset-0 rounded-full bg-accent opacity-20 blur-2xl animate-[splash-glow_2s_ease-in-out_infinite]" />
       <img
         src={orthrusLogo}
         alt="Orthrus"
@@ -27,16 +27,16 @@ export const SplashScreen: FC<SplashScreenProps> = ({ fadeOut, onComplete }) => 
 
     {/* App name */}
     <h1
-      className="text-xl font-semibold tracking-widest text-[var(--text)] mb-6 uppercase"
+      className="text-xl font-semibold tracking-widest text-foreground mb-6 uppercase"
       style={{ fontFamily: '"Satyp", "SF Mono", monospace' }}
     >
       Orthrus
     </h1>
 
     {/* Spinner */}
-    <div className="w-5 h-5 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin mb-4" />
+    <div className="w-5 h-5 rounded-full border-2 border-border border-t-accent animate-spin mb-4" />
 
     {/* Status text */}
-    <p className="text-xs text-[var(--text-muted)]">Starting backend…</p>
+    <p className="text-xs text-muted-foreground">Starting backend…</p>
   </div>
 );

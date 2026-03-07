@@ -72,32 +72,32 @@ export function EventRow({
     <div className="flex flex-col gap-0 text-sm">
       {/* History entries */}
       {history.map((h, i) => (
-        <div key={`h-${i}`} className="border-b border-[var(--border)]">
+        <div key={`h-${i}`} className="border-b border-border">
           <button
-            className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-hover)] transition-colors"
+            className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-hover transition-colors"
             onClick={() => setExpandedHistIdx(expandedHistIdx === i ? null : i)}
           >
-            <span className="text-[var(--text-muted)] text-xs w-6 text-right shrink-0">
+            <span className="text-muted-foreground text-xs w-6 text-right shrink-0">
               #{h.index}
             </span>
             <ActionLabel action={h.action} />
-            <span className="text-[var(--text-muted)] font-mono">
+            <span className="text-muted-foreground font-mono">
               {h.original_event?.event ?? "—"}
             </span>
             {h.delay_ms > 0 && (
-              <span className="text-[var(--warning)] text-xs">+{h.delay_ms}ms</span>
+              <span className="text-warning text-xs">+{h.delay_ms}ms</span>
             )}
-            <span className="ml-auto text-[var(--text-muted)] text-xs tabular-nums">
+            <span className="ml-auto text-muted-foreground text-xs tabular-nums">
               {formatTime(h.timestamp)}
             </span>
-            <span className="text-[var(--text-muted)] text-xs">
+            <span className="text-muted-foreground text-xs">
               {expandedHistIdx === i ? "▲" : "▼"}
             </span>
           </button>
           {expandedHistIdx === i && (
             <div className="px-3 pb-2">
               {h.sent_event && (
-                <div className="rounded overflow-hidden border border-[var(--border)]">
+                <div className="rounded overflow-hidden border border-border">
                   <CodeBlock value={h.sent_event.data} maxHeight="300px" />
                 </div>
               )}
@@ -108,16 +108,16 @@ export function EventRow({
 
       {/* Pending events (breakpoint held) */}
       {pending.map((p, i) => (
-        <div key={`p-${i}`} className="border-b border-[var(--border)] bg-[var(--bg-hover)]">
+        <div key={`p-${i}`} className="border-b border-border bg-hover">
           {/* Summary row */}
           <div className="flex items-center gap-2 px-3 py-2">
-            <span className="text-[var(--text-muted)] text-xs w-6 text-right shrink-0">
+            <span className="text-muted-foreground text-xs w-6 text-right shrink-0">
               #{p.index}
             </span>
             <Badge variant="warning" className="uppercase font-semibold">pending</Badge>
-            <span className="text-[var(--text)] font-mono">{p.event.event}</span>
+            <span className="text-foreground font-mono">{p.event.event}</span>
             <button
-              className="ml-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+              className="ml-1 text-xs text-muted-foreground hover:text-foreground"
               onClick={() => setExpandedPendIdx(expandedPendIdx === i ? null : i)}
             >
               {expandedPendIdx === i ? "▲" : "▼"}
@@ -158,7 +158,7 @@ export function EventRow({
           {/* Expanded data */}
           {expandedPendIdx === i && (
             <div className="px-3 pb-2">
-              <div className="rounded overflow-hidden border border-[var(--border)]">
+              <div className="rounded overflow-hidden border border-border">
                 <CodeBlock value={p.event.data} maxHeight="300px" />
               </div>
             </div>
@@ -193,19 +193,19 @@ export function EventRow({
         <Dialog open onOpenChange={(v) => { if (!v) setModal(null); }}>
           <DialogContent className="sm:max-w-xs" showCloseButton={false}>
             <DialogHeader>
-              <DialogTitle className="text-sm text-[var(--warning)]">
+              <DialogTitle className="text-sm text-warning">
                 Delay Event #{modal.index}
               </DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1">
-                <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+                <Label className="text-muted-foreground text-xs uppercase tracking-wider">
                   delay (ms)
                 </Label>
                 <Input
                   type="number"
                   min={1}
-                  className="focus:border-[var(--warning)]"
+                  className="focus:border-warning"
                   value={delayMs}
                   onChange={(e) => setDelayMs(Number(e.target.value))}
                 />

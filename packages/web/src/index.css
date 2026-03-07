@@ -54,8 +54,7 @@
     --muted: var(--bg-hover);
     --muted-foreground: var(--text-muted);
 
-    --accent-color: var(--bg-hover);
-    --accent-foreground: var(--text);
+    --accent-foreground: #ffffff;
 
     --destructive: var(--danger);
     --destructive-foreground: #ffffff;
@@ -91,7 +90,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent-color);
+  --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
@@ -111,6 +110,16 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --color-border: var(--border);
+
+  /* ── Orthrus flat color tokens ─────────────────────────────── */
+  --color-panel: var(--bg-panel);
+  --color-hover: var(--bg-hover);
+  --color-selected: var(--bg-selected);
+  --color-dim: var(--text-dim);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-inject: var(--inject);
 }
 
 * {

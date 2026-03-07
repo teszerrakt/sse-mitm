@@ -13,20 +13,20 @@ const badgeVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground border-transparent",
         destructive:
-          "bg-[var(--danger)]/10 text-[var(--danger)] border-[var(--danger)]/40",
+          "bg-danger/10 text-danger border-danger/40",
         outline:
-          "border-[var(--border)] text-[var(--text-muted)]",
+          "border-border text-muted-foreground",
         /* ── Orthrus semantic variants ─────────────────────────── */
         success:
-          "text-[var(--success)] border-[var(--success)]/40 bg-transparent",
+          "text-success border-success/40 bg-transparent",
         warning:
-          "text-[var(--warning)] border-[var(--warning)]/40 bg-transparent",
+          "text-warning border-warning/40 bg-transparent",
         danger:
-          "text-[var(--danger)] border-[var(--danger)]/40 bg-transparent",
+          "text-danger border-danger/40 bg-transparent",
         accent:
-          "text-[var(--accent)] bg-[var(--accent)] text-white border-transparent rounded-full",
+          "text-accent bg-accent text-white border-transparent rounded-full",
         inject:
-          "text-[var(--inject)] border-[var(--inject)]/40 bg-transparent",
+          "text-inject border-inject/40 bg-transparent",
       },
     },
     defaultVariants: {

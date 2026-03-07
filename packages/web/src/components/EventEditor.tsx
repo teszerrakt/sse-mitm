@@ -54,7 +54,7 @@ export function EventEditor({ event, onConfirm, onClose }: Props) {
         <div className="flex-1 overflow-y-auto flex flex-col gap-3">
           {/* Event type */}
           <div className="flex flex-col gap-1">
-            <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
               event type
             </Label>
             <Input
@@ -65,7 +65,7 @@ export function EventEditor({ event, onConfirm, onClose }: Props) {
 
           {/* ID */}
           <div className="flex flex-col gap-1">
-            <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
               id (optional)
             </Label>
             <Input
@@ -77,10 +77,10 @@ export function EventEditor({ event, onConfirm, onClose }: Props) {
 
           {/* Data */}
           <div className="flex flex-col gap-1 flex-1">
-            <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
               data
             </Label>
-            <div className="rounded overflow-hidden border border-[var(--border)]">
+            <div className="rounded overflow-hidden border border-border">
               <CodeBlock
                 value={data}
                 readOnly={false}
@@ -94,7 +94,7 @@ export function EventEditor({ event, onConfirm, onClose }: Props) {
             </div>
           </div>
 
-          {error && <div className="text-[var(--danger)] text-sm">{error}</div>}
+          {error && <div className="text-danger text-sm">{error}</div>}
         </div>
 
         <DialogFooter>

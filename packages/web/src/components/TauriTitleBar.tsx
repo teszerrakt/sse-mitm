@@ -60,7 +60,7 @@ export function TauriTitleBar({ children }: TauriTitleBarProps) {
   return (
     <div
       ref={ref}
-      className="relative flex items-center justify-between px-4 h-10 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0 select-none"
+      className="relative flex items-center justify-between px-4 h-10 border-b border-border bg-panel shrink-0 select-none"
     >
       {children}
     </div>

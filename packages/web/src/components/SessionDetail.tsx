@@ -57,11 +57,11 @@ export function SessionDetail({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0 flex-wrap">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-panel shrink-0 flex-wrap">
         {statusBadge(session.info.status)}
-        <span className="text-[var(--text-muted)] text-xs">{session.info.event_count} events</span>
+        <span className="text-muted-foreground text-xs">{session.info.event_count} events</span>
         {session.info.pending_count > 0 && (
-          <span className="text-[var(--warning)] text-xs">
+          <span className="text-warning text-xs">
             {session.info.pending_count} pending
           </span>
         )}
@@ -95,8 +95,8 @@ export function SessionDetail({
 
       {/* Save mock inline form */}
       {showSave && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] bg-[var(--bg-hover)] shrink-0">
-          <span className="text-xs text-[var(--text-muted)]">filename:</span>
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-hover shrink-0">
+          <span className="text-xs text-muted-foreground">filename:</span>
           <Input
             className="h-7 flex-1"
             value={saveFilename}
@@ -127,8 +127,8 @@ export function SessionDetail({
       )}
 
       {/* Request section label */}
-      <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
-        <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-medium">
+      <div className="px-3 py-1.5 border-b border-border bg-panel shrink-0">
+        <span className="text-xs text-dim uppercase tracking-wider font-medium">
           Request
         </span>
       </div>
@@ -137,8 +137,8 @@ export function SessionDetail({
       <RequestPreview request={session.info.request} />
 
       {/* Response section label */}
-      <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
-        <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-medium">
+      <div className="px-3 py-1.5 border-b border-border bg-panel shrink-0">
+        <span className="text-xs text-dim uppercase tracking-wider font-medium">
           Response Events
         </span>
       </div>
@@ -146,7 +146,7 @@ export function SessionDetail({
       {/* Events */}
       <div className="flex-1 overflow-y-auto">
         {session.pending.length === 0 && session.history.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
             No events yet
           </div>
         ) : (

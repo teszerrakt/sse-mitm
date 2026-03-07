@@ -29,9 +29,9 @@ interface GroupData {
 const UNKNOWN_KEY = "__unknown__";
 
 function statusDot(status: string) {
-  if (status === "active") return "bg-[var(--success)]";
-  if (status === "completed") return "bg-[var(--text-dim)]";
-  return "bg-[var(--danger)]";
+  if (status === "active") return "bg-success";
+  if (status === "completed") return "bg-dim";
+  return "bg-danger";
 }
 
 function shortUrl(url: string) {
@@ -119,13 +119,13 @@ export function NetworkTab({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden border-r border-[var(--border)]">
-      <div className="px-3 py-2 text-[var(--text-muted)] text-xs uppercase tracking-widest border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
+    <div className="flex flex-col h-full overflow-hidden border-r border-border">
+      <div className="px-3 py-2 text-muted-foreground text-xs uppercase tracking-widest border-b border-border bg-panel shrink-0">
         SSE Sessions
       </div>
 
       {groups.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-[var(--text-muted)] px-4 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground px-4 text-center">
           <Radio size={28} className="opacity-30 animate-pulse" />
           <span className="text-sm">Waiting for SSE requests...</span>
         </div>
@@ -141,26 +141,26 @@ export function NetworkTab({
           const showTlsWarning = group.ip ? tlsErrorIps.has(group.ip) : false;
 
           return (
-            <div key={group.key} className="border-b border-[var(--border)]">
+            <div key={group.key} className="border-b border-border">
               <button
                 onClick={() => toggleGroup(group.key)}
-                className="group w-full px-3 py-2 text-left hover:bg-[var(--bg-hover)] transition-colors"
+                className="group w-full px-3 py-2 text-left hover:bg-hover transition-colors"
               >
                 <div className="flex items-center gap-2">
                   {isExpanded ? (
                     <ChevronDown
                       size={14}
-                      className="text-[var(--text-muted)] shrink-0"
+                      className="text-muted-foreground shrink-0"
                     />
                   ) : (
                     <ChevronRight
                       size={14}
-                      className="text-[var(--text-muted)] shrink-0"
+                      className="text-muted-foreground shrink-0"
                     />
                   )}
                   <osInfo.Icon
                     size={14}
-                    className="text-[var(--text-muted)] shrink-0"
+                    className="text-muted-foreground shrink-0"
                   />
 
                   <div className="min-w-0 flex-1">
@@ -182,7 +182,7 @@ export function NetworkTab({
                         />
                       ) : (
                         <>
-                          <span className="text-sm text-[var(--text)] truncate">
+                          <span className="text-sm text-foreground truncate">
                             {groupAlias}
                           </span>
                           {group.ip ? (
@@ -193,7 +193,7 @@ export function NetworkTab({
                                 e.stopPropagation();
                                 startEditAlias(group.ip as string, groupAlias);
                               }}
-                              className="opacity-0 group-hover:opacity-100 text-[var(--text-dim)] hover:text-[var(--text)] transition-opacity size-5"
+                              className="opacity-0 group-hover:opacity-100 text-dim hover:text-foreground transition-opacity size-5"
                               title="Edit alias"
                             >
                               <Pencil size={12} />
@@ -202,7 +202,7 @@ export function NetworkTab({
                         </>
                       )}
                     </div>
-                    <div className="text-xs text-[var(--text-muted)] font-mono truncate">
+                    <div className="text-xs text-muted-foreground font-mono truncate">
                       {group.displayIp}
                     </div>
                   </div>
@@ -241,7 +241,7 @@ export function NetworkTab({
                     </Button>
                   ) : null}
 
-                  <span className="text-xs text-[var(--text-muted)]">
+                  <span className="text-xs text-muted-foreground">
                     {group.sessions.length}
                   </span>
                 </div>
@@ -258,17 +258,17 @@ export function NetworkTab({
                         key={s.info.id}
                         onClick={() => onSelect(s.info.id)}
                         className={[
-                          "w-full text-left pl-9 pr-3 py-2 border-t border-[var(--border)] transition-colors",
+                          "w-full text-left pl-9 pr-3 py-2 border-t border-border transition-colors",
                           isSelected
-                            ? "bg-[var(--bg-selected)]"
-                            : "bg-transparent hover:bg-[var(--bg-hover)]",
+                            ? "bg-selected"
+                            : "bg-transparent hover:bg-hover",
                         ].join(" ")}
                       >
                         <div className="flex items-center gap-2 mb-0.5">
                           <span
                             className={`w-2 h-2 rounded-full shrink-0 ${statusDot(s.info.status)}`}
                           />
-                          <span className="text-[var(--text-muted)] text-xs uppercase">
+                          <span className="text-muted-foreground text-xs uppercase">
                             {s.info.request.method}
                           </span>
                           {hasPending && (
@@ -277,10 +277,10 @@ export function NetworkTab({
                             </Badge>
                           )}
                         </div>
-                        <div className="text-[var(--text)] text-sm truncate font-mono">
+                        <div className="text-foreground text-sm truncate font-mono">
                           {shortUrl(s.info.request.url)}
                         </div>
-                        <div className="text-[var(--text-muted)] text-xs mt-0.5">
+                        <div className="text-muted-foreground text-xs mt-0.5">
                           {s.info.event_count} events
                         </div>
                       </button>

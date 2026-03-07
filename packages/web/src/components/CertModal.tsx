@@ -82,15 +82,15 @@ export function CertModal({
 
         <div className="space-y-4 text-sm">
           {showMac ? (
-            <div className="rounded border border-[var(--border)] bg-[var(--bg)] p-3">
-              <div className="font-medium text-[var(--text)]">macOS setup</div>
-              <p className="mt-1 text-[var(--text-muted)]">
+            <div className="rounded border border-border bg-background p-3">
+              <div className="font-medium text-foreground">macOS setup</div>
+              <p className="mt-1 text-muted-foreground">
                 Install and trust the mitmproxy CA certificate in your login keychain.
                 This allows the proxy to inspect HTTPS traffic.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {status?.installed ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-[var(--success)]">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-success">
                     <CheckCircle size={14} />
                     Certificate installed and trusted
                   </span>
@@ -110,15 +110,15 @@ export function CertModal({
                 ) : null}
               </div>
               {installError ? (
-                <div className="mt-2 text-[var(--danger)]">{installError}</div>
+                <div className="mt-2 text-danger">{installError}</div>
               ) : null}
             </div>
           ) : null}
 
           {showIOS ? (
-            <div className="rounded border border-[var(--border)] bg-[var(--bg)] p-3">
-              <div className="font-medium text-[var(--text)]">iOS setup</div>
-              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[var(--text-muted)]">
+            <div className="rounded border border-border bg-background p-3">
+              <div className="font-medium text-foreground">iOS setup</div>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
                 <li>Set WiFi proxy to {proxyAddress ?? "<proxy-ip>:28080"}.</li>
                 <li>Open Safari and visit `http://mitm.it`.</li>
                 <li>Download and install the profile.</li>
@@ -128,9 +128,9 @@ export function CertModal({
           ) : null}
 
           {showAndroid ? (
-            <div className="rounded border border-[var(--border)] bg-[var(--bg)] p-3">
-              <div className="font-medium text-[var(--text)]">Android setup</div>
-              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[var(--text-muted)]">
+            <div className="rounded border border-border bg-background p-3">
+              <div className="font-medium text-foreground">Android setup</div>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
                 <li>Set WiFi proxy to {proxyAddress ?? "<proxy-ip>:28080"}.</li>
                 <li>Open browser and visit `http://mitm.it`.</li>
                 <li>Download the Android certificate (`.cer`).</li>

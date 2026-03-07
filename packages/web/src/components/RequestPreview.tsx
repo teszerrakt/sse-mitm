@@ -11,13 +11,13 @@ export function RequestPreview({ request }: Props) {
   const [showHeaders, setShowHeaders] = useState(false);
 
   return (
-    <div className="border-b border-[var(--border)] text-sm">
+    <div className="border-b border-border text-sm">
       {/* URL bar */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <span className="text-[var(--accent)] font-semibold uppercase text-xs">
+        <span className="text-accent font-semibold uppercase text-xs">
           {request.method}
         </span>
-        <span className="text-[var(--text)] font-mono truncate flex-1">{request.url}</span>
+        <span className="text-foreground font-mono truncate flex-1">{request.url}</span>
         <Button variant="outline" size="xs" onClick={() => setShowHeaders((v) => !v)}>
           {showHeaders ? "Hide Headers" : "Headers"}
         </Button>
@@ -26,12 +26,12 @@ export function RequestPreview({ request }: Props) {
       {/* Headers (collapsible) */}
       {showHeaders && (
         <div className="px-3 pb-2 overflow-x-auto">
-          <table className="text-xs text-[var(--text-muted)] font-mono">
+          <table className="text-xs text-muted-foreground font-mono">
             <tbody>
               {Object.entries(request.headers).map(([k, v]) => (
                 <tr key={k}>
-                  <td className="pr-4 text-[var(--text-dim)] whitespace-nowrap align-top">{k}</td>
-                  <td className="text-[var(--text)] break-all">{v}</td>
+                  <td className="pr-4 text-dim whitespace-nowrap align-top">{k}</td>
+                  <td className="text-foreground break-all">{v}</td>
                 </tr>
               ))}
             </tbody>
@@ -42,7 +42,7 @@ export function RequestPreview({ request }: Props) {
       {/* Body */}
       {request.body && (
         <div className="px-3 pb-2">
-          <div className="rounded overflow-hidden border border-[var(--border)]">
+          <div className="rounded overflow-hidden border border-border">
             <CodeBlock value={request.body} maxHeight="240px" />
           </div>
         </div>

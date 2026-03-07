@@ -20,11 +20,11 @@ export function AutoForwardToggle({ autoForward, onChange }: Props) {
         size="sm"
         checked={autoForward}
         onCheckedChange={onChange}
-        className="data-[state=checked]:bg-[var(--success)]"
+        className="data-[state=checked]:bg-success"
       />
       <Label
         className={`text-xs cursor-pointer select-none ${
-          autoForward ? "text-[var(--success)]" : "text-[var(--text-muted)]"
+          autoForward ? "text-success" : "text-muted-foreground"
         }`}
         onClick={() => onChange(!autoForward)}
       >

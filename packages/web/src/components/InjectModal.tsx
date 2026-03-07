@@ -41,7 +41,7 @@ export function InjectModal({ afterIndex, onConfirm, onClose }: Props) {
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="sm:max-w-[540px]" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle className="text-sm text-[var(--inject)]">
+          <DialogTitle className="text-sm text-inject">
             Inject Synthetic Event
           </DialogTitle>
           <DialogDescription>after index {afterIndex}</DialogDescription>
@@ -49,22 +49,22 @@ export function InjectModal({ afterIndex, onConfirm, onClose }: Props) {
 
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
               event type
             </Label>
             <Input
-              className="focus:border-[var(--inject)]"
+              className="focus:border-inject"
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
               id (optional)
             </Label>
             <Input
-              className="focus:border-[var(--inject)]"
+              className="focus:border-inject"
               value={id}
               onChange={(e) => setId(e.target.value)}
               placeholder="(none)"
@@ -72,10 +72,10 @@ export function InjectModal({ afterIndex, onConfirm, onClose }: Props) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <Label className="text-[var(--text-muted)] text-xs uppercase tracking-wider">
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
               data
             </Label>
-            <div className="rounded overflow-hidden border border-[var(--border)]">
+            <div className="rounded overflow-hidden border border-border">
               <CodeBlock
                 value={data}
                 readOnly={false}
@@ -86,7 +86,7 @@ export function InjectModal({ afterIndex, onConfirm, onClose }: Props) {
             </div>
           </div>
 
-          {error && <div className="text-[var(--danger)] text-sm">{error}</div>}
+          {error && <div className="text-danger text-sm">{error}</div>}
         </div>
 
         <DialogFooter>
