@@ -1,19 +1,17 @@
 <p align="center">
-  <img src="ui/src/assets/orthrus.png" alt="Orthrus" width="120" />
+  <img src="packages/web/src/assets/orthrus.png" alt="Orthrus" width="120" />
 </p>
 
 # Orthrus
 
-SSE debugging tool — intercepts Server-Sent Events with mitmproxy, routes them through a relay server, and presents a Chrome DevTools-style UI to inspect, pause, edit, drop, inject, and delay individual events in real time.
-
-## Architecture
+SSE debugging tool — intercepts Server-Sent Events via mitmproxy, routes them through a relay server, and presents a browser UI (or native macOS app) to inspect, pause, edit, drop, inject, and delay individual events in real time.
 
 ```
 Mobile/Browser ──WiFi proxy──► mitmproxy :28080
                                    │
                                    │ rewrites SSE requests to /relay?target=<url>
                                    ▼
-                           relay server :29000   ◄──► WebSocket ◄──► Browser UI
+                           relay server :29000   ◄──► WebSocket ◄──► Browser UI / Desktop App
                                    │
                                    │ upstream SSE fetch
                                    ▼
@@ -22,35 +20,24 @@ Mobile/Browser ──WiFi proxy──► mitmproxy :28080
 
 ## Prerequisites
 
-- [Python 3.12+](https://www.python.org/downloads/)
-- [uv](https://docs.astral.sh/uv/getting-started/installation/) — Python package manager (installs mitmproxy and all Python deps)
-- [bun](https://bun.sh/docs/installation) — JavaScript runtime & package manager
+- [Python 3.12+](https://www.python.org/downloads/) with [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [bun](https://bun.sh/docs/installation)
 
 ## Quick Start
 
 ```bash
-# Check prerequisites and install all dependencies
-./install.sh
-
-# Build the UI
-cd ui && bun run build && cd ..
-
-# Run everything
-./run.sh
+bun run install:all        # install all dependencies (uv + bun)
+bun run dev:web            # relay server + mitmproxy + Vite dev server
 ```
 
-`run.sh` auto-builds the UI only when inputs change (`ui/src`, `ui/index.html`, `ui/package.json`, `ui/bun.lock`, `ui/vite.config.ts`, `ui/tsconfig*.json`).
+Open `http://localhost:5173` in your browser. On your mobile device, set WiFi proxy to `<your-machine-ip>:28080`.
 
-Open `http://localhost:29000` in your browser.
+### Desktop App (macOS)
 
-On your mobile device, set the WiFi proxy to `<your-machine-ip>:28080`.
-
-## How It Works
-
-1. **mitmproxy** (`addon.py`) handles HTTPS CONNECT tunneling and certificate installation. It intercepts matching SSE requests and rewrites them to the relay server.
-2. **relay server** (`relay_server.py`) receives the rewritten request, fetches the real SSE stream from upstream, and holds each event at a breakpoint until the user acts on it via the UI.
-3. **WebSocket** connects the browser UI to the relay server for real-time bidirectional control.
-4. **React UI** (`ui/`) shows all active SSE sessions in a left panel; clicking a session shows events in a right panel with action buttons.
+```bash
+bun run dev:desktop        # relay server + mitmproxy + Tauri dev
+bun run build:desktop      # build .app + .dmg
+```
 
 ## Event Actions
 
@@ -63,11 +50,11 @@ On your mobile device, set the WiFi proxy to `<your-machine-ip>:28080`.
 | **Delay** | Wait N ms then forward |
 | **Forward All** | Flush all pending events without reviewing |
 
-**Auto-Forward**: Toggle in the toolbar to let all events pass through automatically (like normal browsing, but with logging).
+**Auto-Forward**: Toggle in the toolbar to let all events pass through automatically.
 
 ## Mock Files
 
-Drop `.json` files into `mocks/`. Set `"enabled": true` on exactly one file to activate it.
+Drop `.json` files into `mocks/`. Set `"enabled": true` on exactly one to activate it. Mock files are hot-reloaded.
 
 ```json
 {
@@ -83,11 +70,9 @@ Drop `.json` files into `mocks/`. Set `"enabled": true` on exactly one file to a
 }
 ```
 
-See `mocks/_example_*.json` for more examples. Mock files are hot-reloaded — no server restart needed.
-
 ## Configuration
 
-`config.json` controls which URLs mitmproxy intercepts. You can also edit patterns from the **Settings page** in the UI (gear icon in top bar).
+`config.json` controls which URLs mitmproxy intercepts. Editable from the Settings page in the UI.
 
 ```json
 {
@@ -97,7 +82,7 @@ See `mocks/_example_*.json` for more examples. Mock files are hot-reloaded — n
 }
 ```
 
-Patterns use glob syntax — `*` matches anything. The addon hot-reloads `config.json` on every request (cheap mtime check), so changes take effect immediately without restarting mitmproxy.
+Patterns use glob syntax. Changes are hot-reloaded on every request.
 
 ## Environment Variables
 
@@ -106,19 +91,3 @@ Patterns use glob syntax — `*` matches anything. The addon hot-reloads `config
 | `RELAY_PORT` | `29000` | Relay server port |
 | `PROXY_PORT` | `28080` | mitmproxy port |
 | `MOCKS_DIR` | `./mocks` | Mock files directory |
-
-## Development
-
-```bash
-# Run everything with Vite HMR (relay + mitmproxy + Vite dev server)
-./run_dev.sh
-
-# Python type check
-uv run mypy src/ relay_server.py addon.py
-
-# Python lint
-uv run ruff check .
-
-# UI dev server only (if relay is already running separately)
-cd ui && bun run dev
-```
