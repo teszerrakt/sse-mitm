@@ -8,8 +8,16 @@
   font-display: swap;
 }
 
+/*
+ * Orthrus design tokens + shadcn CSS variable bridge.
+ *
+ * We keep the original --bg, --accent, etc. tokens so existing code
+ * still works, and we also define the shadcn `--background`, `--primary`,
+ * etc. aliases that shadcn components reference via Tailwind v4 @theme.
+ */
 @layer base {
   :root {
+    /* ── Orthrus design tokens (original) ──────────────────────── */
     --bg: #0f1117;
     --bg-panel: #161b22;
     --bg-hover: #1c2128;
@@ -24,7 +32,85 @@
     --warning: #d29922;
     --danger: #f85149;
     --inject: #bc8cff;
+
+    /* ── shadcn CSS variable bridge ────────────────────────────── */
+    --radius: 0.375rem;
+
+    --background: var(--bg);
+    --foreground: var(--text);
+
+    --card: var(--bg-panel);
+    --card-foreground: var(--text);
+
+    --popover: var(--bg-panel);
+    --popover-foreground: var(--text);
+
+    --primary: var(--accent);
+    --primary-foreground: #ffffff;
+
+    --secondary: var(--bg-hover);
+    --secondary-foreground: var(--text);
+
+    --muted: var(--bg-hover);
+    --muted-foreground: var(--text-muted);
+
+    --accent-color: var(--bg-hover);
+    --accent-foreground: var(--text);
+
+    --destructive: var(--danger);
+    --destructive-foreground: #ffffff;
+
+    --input: var(--border);
+    --ring: var(--accent);
+
+    /* shadcn sidebar (unused but required by some shadcn deps) */
+    --sidebar: var(--bg-panel);
+    --sidebar-foreground: var(--text);
+    --sidebar-primary: var(--accent);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--bg-hover);
+    --sidebar-accent-foreground: var(--text);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--accent);
+
+    color-scheme: dark;
   }
+}
+
+/* ── Register tokens with Tailwind v4 @theme ─────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent-color);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-border: var(--border);
 }
 
 * {

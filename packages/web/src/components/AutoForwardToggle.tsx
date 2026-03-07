@@ -1,3 +1,6 @@
+import { Switch } from "./ui/switch";
+import { Label } from "./ui/label";
+
 interface Props {
   autoForward: boolean;
   onChange: (v: boolean) => void;
@@ -5,29 +8,28 @@ interface Props {
 
 export function AutoForwardToggle({ autoForward, onChange }: Props) {
   return (
-    <button
-      onClick={() => onChange(!autoForward)}
-      className={[
-        "flex items-center gap-2 px-2 py-1 rounded text-sm border transition-colors",
-        autoForward
-          ? "bg-[var(--success)]/15 border-[var(--success)]/40 text-[var(--success)]"
-          : "bg-transparent border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]",
-      ].join(" ")}
+    <div
+      className="flex items-center gap-2"
       title={
         autoForward
           ? "Auto-Forward ON: all events pass through automatically"
           : "Auto-Forward OFF: events pause at breakpoint"
       }
     >
-      <span
-        className={[
-          "w-3 h-3 rounded-full border-2 shrink-0 transition-colors",
-          autoForward
-            ? "bg-[var(--success)] border-[var(--success)]"
-            : "bg-transparent border-[var(--text-muted)]",
-        ].join(" ")}
+      <Switch
+        size="sm"
+        checked={autoForward}
+        onCheckedChange={onChange}
+        className="data-[state=checked]:bg-[var(--success)]"
       />
-      Auto-Forward
-    </button>
+      <Label
+        className={`text-xs cursor-pointer select-none ${
+          autoForward ? "text-[var(--success)]" : "text-[var(--text-muted)]"
+        }`}
+        onClick={() => onChange(!autoForward)}
+      >
+        Auto-Forward
+      </Label>
+    </div>
   );
 }

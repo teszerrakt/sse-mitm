@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Shield, X, CheckCircle, Loader2 } from "lucide-react";
+import { Shield, CheckCircle, Loader2 } from "lucide-react";
 import type { CertStatus } from "../types";
 import type { DetectedOS } from "../utils/detectOS";
 import { apiFetch } from "../utils/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface CertModalProps {
   open: boolean;
@@ -39,17 +47,6 @@ export function CertModal({
     void reloadStatus();
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   const installCert = async () => {
     setInstalling(true);
     setInstallError(null);
@@ -80,34 +77,22 @@ export function CertModal({
   const showIOS = useMemo(() => os === "iOS" || os === "Unknown", [os]);
   const showAndroid = useMemo(() => os === "Android" || os === "Unknown", [os]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
     >
-      <div
-        className="w-full max-w-xl rounded border border-[var(--border)] bg-[var(--bg-panel)] shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-          <div>
-            <div className="text-sm font-semibold text-[var(--text)]">Certificate Setup</div>
-            <div className="text-xs text-[var(--text-muted)]">
-              {label} ({clientIp})
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)]"
-            title="Close"
-          >
-            <X size={16} />
-          </button>
-        </div>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Certificate Setup</DialogTitle>
+          <DialogDescription>
+            {label} ({clientIp})
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-4 px-4 py-4 text-sm">
+        <div className="space-y-4 text-sm">
           {showMac ? (
             <div className="rounded border border-[var(--border)] bg-[var(--bg)] p-3">
               <div className="font-medium text-[var(--text)]">macOS setup</div>
@@ -122,10 +107,10 @@ export function CertModal({
                     Certificate installed and trusted
                   </span>
                 ) : status?.auto_install_supported ? (
-                  <button
+                  <Button
+                    variant="warning-solid"
                     onClick={installCert}
                     disabled={installing}
-                    className="inline-flex items-center gap-1.5 rounded bg-[var(--warning)] px-3 py-1.5 text-sm font-medium text-black hover:opacity-90 disabled:opacity-60"
                   >
                     {installing ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -133,10 +118,12 @@ export function CertModal({
                       <Shield size={14} />
                     )}
                     {installing ? "Installing..." : "Install & Trust"}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
-              {installError ? <div className="mt-2 text-[var(--danger)]">{installError}</div> : null}
+              {installError ? (
+                <div className="mt-2 text-[var(--danger)]">{installError}</div>
+              ) : null}
             </div>
           ) : null}
 
@@ -164,7 +151,7 @@ export function CertModal({
             </div>
           ) : null}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

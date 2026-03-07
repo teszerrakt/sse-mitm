@@ -4,6 +4,9 @@ import type { SessionState } from "../types";
 import { CertModal } from "./CertModal";
 import { detectOS } from "../utils/detectOS";
 import { useCertStatus } from "../hooks/useCertStatus";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
 
 interface Props {
   sessions: Record<string, SessionState>;
@@ -163,7 +166,7 @@ export function NetworkTab({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {editingIp === group.ip && group.ip ? (
-                        <input
+                        <Input
                           autoFocus
                           value={editingAlias}
                           onChange={(e) => setEditingAlias(e.target.value)}
@@ -175,7 +178,7 @@ export function NetworkTab({
                               setEditingAlias("");
                             }
                           }}
-                          className="min-w-0 w-28 bg-[var(--bg)] border border-[var(--border)] rounded px-1.5 py-0.5 text-sm text-[var(--text)]"
+                          className="min-w-0 w-28 h-6 px-1.5 py-0.5 text-sm"
                         />
                       ) : (
                         <>
@@ -183,16 +186,18 @@ export function NetworkTab({
                             {groupAlias}
                           </span>
                           {group.ip ? (
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 startEditAlias(group.ip as string, groupAlias);
                               }}
-                              className="opacity-0 group-hover:opacity-100 text-[var(--text-dim)] hover:text-[var(--text)] transition-opacity"
+                              className="opacity-0 group-hover:opacity-100 text-[var(--text-dim)] hover:text-[var(--text)] transition-opacity size-5"
                               title="Edit alias"
                             >
                               <Pencil size={12} />
-                            </button>
+                            </Button>
                           ) : null}
                         </>
                       )}
@@ -203,19 +208,20 @@ export function NetworkTab({
                   </div>
 
                   {group.ip ? (
-                    <button
+                    <Button
+                      variant={
+                        showTlsWarning
+                          ? "warning"
+                          : certStatus?.installed
+                            ? "success"
+                            : "outline"
+                      }
+                      size="xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         setCertModalIp(group.ip);
                       }}
-                      className={[
-                        "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs",
-                        showTlsWarning
-                          ? "border-[var(--warning)]/40 bg-[var(--warning)]/10 text-[var(--warning)] hover:bg-[var(--warning)]/20"
-                          : certStatus?.installed
-                            ? "border-[var(--success)]/40 bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/20"
-                            : "border-[var(--text-muted)]/40 bg-[var(--text-muted)]/10 text-[var(--text-muted)] hover:bg-[var(--text-muted)]/20",
-                      ].join(" ")}
+                      className="h-5"
                       title={
                         showTlsWarning
                           ? "Certificate setup required"
@@ -232,7 +238,7 @@ export function NetworkTab({
                         <Shield size={12} />
                       )}
                       Cert
-                    </button>
+                    </Button>
                   ) : null}
 
                   <span className="text-xs text-[var(--text-muted)]">
@@ -266,9 +272,9 @@ export function NetworkTab({
                             {s.info.request.method}
                           </span>
                           {hasPending && (
-                            <span className="ml-auto text-xs bg-[var(--accent)] text-white rounded-full px-2 py-0.5 leading-none">
+                            <Badge variant="accent" className="ml-auto leading-none">
                               {s.info.pending_count}
-                            </span>
+                            </Badge>
                           )}
                         </div>
                         <div className="text-[var(--text)] text-sm truncate font-mono">

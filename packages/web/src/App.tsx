@@ -13,6 +13,7 @@ import { MainTitleBar } from "./components/MainTitleBar";
 import { AppFooter } from "./components/AppFooter";
 import { VersionInfo } from "./components/VersionInfo";
 import { SplashScreen } from "./components/SplashScreen";
+import { Button } from "./components/ui/button";
 import boredOrthrus from "./assets/bored-orthrus.webp";
 
 type View = "inspector" | "settings";
@@ -75,21 +76,25 @@ export default function App() {
             {Object.keys(sessions).length !== 1 ? "s" : ""}
           </span>
           {Object.keys(sessions).length > 0 && (
-            <button
+            <Button
+              variant="ghost"
+              size={isTauri() ? "icon-xs" : "icon-sm"}
               onClick={() => setShowClearConfirm(true)}
-              className={`flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--bg-hover)] transition-colors ${isTauri() ? "w-6 h-6" : "w-8 h-8"}`}
+              className="hover:text-[var(--danger)] hover:bg-[var(--bg-hover)]"
               title="Clear all sessions"
             >
               <Trash2 size={isTauri() ? 13 : 16} />
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size={isTauri() ? "icon-xs" : "icon-sm"}
             onClick={() => setView("settings")}
-            className={`flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-hover)] transition-colors ${isTauri() ? "w-6 h-6" : "w-8 h-8"}`}
+            className="hover:bg-[var(--bg-hover)]"
             title="Settings"
           >
             <Settings size={isTauri() ? 14 : 18} />
-          </button>
+          </Button>
         </div>
       </TauriTitleBar>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RequestInfo } from "../types";
 import { CodeBlock } from "./CodeBlock";
+import { Button } from "./ui/button";
 
 interface Props {
   request: RequestInfo;
@@ -17,12 +18,9 @@ export function RequestPreview({ request }: Props) {
           {request.method}
         </span>
         <span className="text-[var(--text)] font-mono truncate flex-1">{request.url}</span>
-        <button
-          onClick={() => setShowHeaders((v) => !v)}
-          className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] uppercase tracking-wide border border-[var(--border)] px-2 py-0.5 rounded"
-        >
+        <Button variant="outline" size="xs" onClick={() => setShowHeaders((v) => !v)}>
           {showHeaders ? "Hide Headers" : "Headers"}
-        </button>
+        </Button>
       </div>
 
       {/* Headers (collapsible) */}

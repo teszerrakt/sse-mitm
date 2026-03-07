@@ -3,6 +3,9 @@ import type { SessionState, SSEEvent } from "../types";
 import { EventRow } from "./EventRow";
 import { RequestPreview } from "./RequestPreview";
 import { AutoForwardToggle } from "./AutoForwardToggle";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 interface Props {
   session: SessionState;
@@ -17,22 +20,10 @@ interface Props {
 
 function statusBadge(status: string) {
   if (status === "active")
-    return (
-      <span className="text-xs text-[var(--success)] border border-[var(--success)]/40 rounded px-2 py-0.5">
-        ACTIVE
-      </span>
-    );
+    return <Badge variant="success">ACTIVE</Badge>;
   if (status === "completed")
-    return (
-      <span className="text-xs text-[var(--text-muted)] border border-[var(--border)] rounded px-2 py-0.5">
-        DONE
-      </span>
-    );
-  return (
-    <span className="text-xs text-[var(--danger)] border border-[var(--danger)]/40 rounded px-2 py-0.5">
-      ERROR
-    </span>
-  );
+    return <Badge variant="outline">DONE</Badge>;
+  return <Badge variant="danger">ERROR</Badge>;
 }
 
 export function SessionDetail({
@@ -72,20 +63,14 @@ export function SessionDetail({
           <AutoForwardToggle autoForward={autoForward} onChange={handleAutoForwardChange} />
 
           {session.info.pending_count > 0 && !autoForward && (
-            <button
-              onClick={onForwardAll}
-              className="px-3 py-1 text-xs text-[var(--success)] border border-[var(--success)]/40 rounded hover:bg-[var(--success)]/10 transition-colors"
-            >
+            <Button variant="success" size="xs" onClick={onForwardAll}>
               Forward All
-            </button>
+            </Button>
           )}
 
-          <button
-            onClick={() => setShowSave((v) => !v)}
-            className="px-3 py-1 text-xs text-[var(--text-muted)] border border-[var(--border)] rounded hover:text-[var(--text)] transition-colors"
-          >
+          <Button variant="outline" size="xs" onClick={() => setShowSave((v) => !v)}>
             Save Mock
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -93,13 +78,15 @@ export function SessionDetail({
       {showSave && (
         <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] bg-[var(--bg-hover)] shrink-0">
           <span className="text-xs text-[var(--text-muted)]">filename:</span>
-          <input
-            className="bg-[var(--bg)] border border-[var(--border)] rounded px-2 py-1 text-sm font-mono text-[var(--text)] focus:outline-none focus:border-[var(--accent)] flex-1"
+          <Input
+            className="h-7 flex-1"
             value={saveFilename}
             onChange={(e) => setSaveFilename(e.target.value)}
             placeholder="session_name.json"
           />
-          <button
+          <Button
+            variant="default"
+            size="xs"
             onClick={() => {
               if (saveFilename) {
                 onSave(saveFilename.endsWith(".json") ? saveFilename : saveFilename + ".json");
@@ -107,16 +94,16 @@ export function SessionDetail({
                 setSaveFilename("");
               }
             }}
-            className="px-3 py-1 text-xs text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded"
           >
             Save
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={() => setShowSave(false)}
-            className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       )}
 

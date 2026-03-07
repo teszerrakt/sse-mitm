@@ -6,6 +6,8 @@ import { TauriTitleBar } from "./TauriTitleBar";
 import { MainTitleBar } from "./MainTitleBar";
 import { AppFooter } from "./AppFooter";
 import { VersionInfo } from "./VersionInfo";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 interface Props {
   onBack: () => void;
@@ -86,14 +88,15 @@ export function SettingsPage({ onBack }: Props) {
 
       {/* Settings header */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onBack}
-          className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
           title="Back to inspector"
         >
           <ArrowLeft size={16} />
-          <span className="text-sm">Back</span>
-        </button>
+          <span>Back</span>
+        </Button>
         <span className="text-[var(--text)] font-semibold text-base tracking-tight">Settings</span>
       </div>
 
@@ -125,33 +128,37 @@ export function SettingsPage({ onBack }: Props) {
               <div className="space-y-2">
                 {effectivePatterns.map((pattern, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={pattern}
                       onChange={(e) => handlePatternChange(idx, e.target.value)}
                       placeholder="*/sse*"
-                      className="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] text-sm font-mono placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      className="flex-1"
                       spellCheck={false}
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => handleRemovePattern(idx)}
                       disabled={effectivePatterns.length <= 1}
-                      className="w-8 h-8 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="hover:text-[var(--danger)] hover:bg-[var(--danger)]/10"
                       title="Remove pattern"
                     >
                       <X size={14} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
 
-              <button
+              <Button
+                variant="accent"
+                size="xs"
                 onClick={handleAddPattern}
-                className="mt-3 flex items-center gap-2 text-[var(--accent)] hover:text-[var(--accent-hover)] text-sm transition-colors"
+                className="mt-3"
               >
                 <Plus size={14} />
                 Add pattern
-              </button>
+              </Button>
             </section>
 
             {/* Server Info */}
@@ -171,13 +178,12 @@ export function SettingsPage({ onBack }: Props) {
 
             {/* Save */}
             <section className="flex items-center gap-3">
-              <button
+              <Button
                 onClick={handleSave}
                 disabled={saveStatus === "saving"}
-                className="px-4 py-2 rounded bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {saveStatus === "saving" ? "Saving…" : "Save"}
-              </button>
+              </Button>
 
               {saveStatus === "saved" && (
                 <span className="text-[var(--success)] text-sm">
