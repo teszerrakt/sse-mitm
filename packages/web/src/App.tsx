@@ -47,8 +47,9 @@ export default function App() {
     <div className="flex flex-col h-full overflow-hidden">
       <TauriTitleBar>
         <MainTitleBar proxyAddress={config?.proxy_address ?? null} />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2" data-tauri-drag-region>
           <span
+            data-tauri-drag-region
             className={`text-[var(--text-muted)] ${isTauri() ? "text-xs" : "text-sm"}`}
           >
             {Object.keys(sessions).length} session

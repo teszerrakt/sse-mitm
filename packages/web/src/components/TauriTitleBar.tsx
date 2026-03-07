@@ -21,7 +21,7 @@ export function TauriTitleBar({ children }: TauriTitleBarProps) {
     <div
       data-tauri-drag-region
       className={
-        "flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0"
+        "flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] bg-[var(--bg-panel)] shrink-0 select-none"
       }
       style={isTauri() && !isFullscreen ? { paddingLeft: 76 } : undefined}
     >
