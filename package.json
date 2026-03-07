@@ -19,13 +19,11 @@
     }
   },
   "scripts": {
-    "dev": "./scripts/run_dev.sh",
-    "dev:web": "bun --cwd packages/web dev",
-    "dev:backend": "cd packages/backend && uv run python relay_server.py",
-    "build": "bun run build:web",
-    "start": "./scripts/run.sh",
+    "dev:web": "./scripts/run_dev.sh",
+    "dev:desktop": "./scripts/run_desktop.sh",
+    "start:web": "./scripts/run.sh",
     "build:web": "bun --cwd packages/web build",
-    "test": "bun run test:backend",
+    "build:desktop": "bun --cwd packages/desktop build",
     "test:backend": "bun run test:backend:unit && bun run test:backend:integration",
     "test:backend:unit": "cd packages/backend && uv run pytest tests/unit/ -v",
     "test:backend:integration": "cd packages/backend && uv run pytest tests/integration/ -v",
@@ -44,8 +42,6 @@
     "typecheck": "bun run typecheck:web && bun run typecheck:backend",
     "typecheck:web": "bun --cwd packages/web tsc -b",
     "typecheck:backend": "cd packages/backend && uv run mypy src/ relay_server.py addon.py",
-    "install:all": "./scripts/install.sh",
-    "dev:desktop": "./scripts/run_desktop.sh",
-    "build:desktop": "bun --cwd packages/desktop build"
+    "install:all": "./scripts/install.sh"
   }
 }
