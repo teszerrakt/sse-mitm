@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -254,7 +255,7 @@ class SSEInterceptorAddon:
     # mitmproxy hooks
     # ------------------------------------------------------------------
 
-    def request(self, flow: http.HTTPFlow) -> None:
+    async def request(self, flow: http.HTTPFlow) -> None:
         """
         Called when a complete HTTP request has been received.
 
@@ -263,6 +264,10 @@ class SSEInterceptorAddon:
         2. SSE pattern match — rewrite to relay /relay (existing behavior)
         3. API breakpoint match — block via /traffic/intercept
         4. Everything else — fire-and-forget log via /traffic/log
+
+        This hook is async so that blocking intercept calls
+        (which wait for user action) run in a thread and don't
+        freeze the shared asyncio event loop.
         """
         self._reload_if_changed()
 
@@ -277,12 +282,14 @@ class SSEInterceptorAddon:
             self._rewrite_to_relay(flow, url)
             return
 
-        # 2. API breakpoint — synchronously block until user acts
+        # 2. API breakpoint — block until user acts (runs in thread pool
+        #    so the event loop stays responsive)
         rule = self._match_api_breakpoint(url)
         if rule is not None and rule["stage"] in ("request", "both"):
             logger.info("Breakpoint hit (request): %s %s", flow.request.method, url)
             req_data = _extract_request_data(flow)
-            result = self._post_to_relay(
+            result = await asyncio.to_thread(
+                self._post_to_relay,
                 "/traffic/intercept",
                 {
                     "phase": "request",
@@ -312,12 +319,16 @@ class SSEInterceptorAddon:
             },
         )
 
-    def response(self, flow: http.HTTPFlow) -> None:
+    async def response(self, flow: http.HTTPFlow) -> None:
         """
         Called when a complete HTTP response has been received.
 
         SSE flows (rewritten to /relay) are skipped — they handle their own
         streaming. All other flows get logged or intercepted at response phase.
+
+        This hook is async so that blocking intercept calls
+        (which wait for user action) run in a thread and don't
+        freeze the shared asyncio event loop.
         """
         # Skip relay traffic and SSE-rewritten flows
         if self._is_relay_request(flow):
@@ -338,7 +349,8 @@ class SSEInterceptorAddon:
             )
             req_data = _extract_request_data(flow)
             resp_data = _extract_response_data(flow)
-            result = self._post_to_relay(
+            result = await asyncio.to_thread(
+                self._post_to_relay,
                 "/traffic/intercept",
                 {
                     "phase": "response",
