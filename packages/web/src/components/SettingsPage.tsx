@@ -6,6 +6,7 @@ import { TauriTitleBar } from "./TauriTitleBar";
 import { MainTitleBar } from "./MainTitleBar";
 import { AppFooter } from "./AppFooter";
 import { VersionInfo } from "./VersionInfo";
+import { UpdateBanner } from "./UpdateBanner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
@@ -349,6 +350,11 @@ export function SettingsPage({ onBack }: Props) {
 
       <AppFooter>
         <VersionInfo />
+        {isTauri() && (
+          <span className="ml-auto">
+            <UpdateBanner />
+          </span>
+        )}
       </AppFooter>
     </div>
   );

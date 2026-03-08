@@ -18,6 +18,7 @@ import { TauriTitleBar } from "./components/TauriTitleBar";
 import { MainTitleBar } from "./components/MainTitleBar";
 import { AppFooter } from "./components/AppFooter";
 import { VersionInfo } from "./components/VersionInfo";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { SplashScreen } from "./components/SplashScreen";
 import { Button } from "./components/ui/button";
 import boredOrthrus from "./assets/bored-orthrus.webp";
@@ -289,6 +290,11 @@ export default function App() {
 
       <AppFooter>
         <VersionInfo />
+        {isTauri() && (
+          <span className="ml-auto">
+            <UpdateBanner />
+          </span>
+        )}
       </AppFooter>
     </div>
   );

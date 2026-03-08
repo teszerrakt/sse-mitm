@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# Only one release at a time
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            rust_target: aarch64-apple-darwin
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            rust_target: x86_64-apple-darwin
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Python sidecar ---
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build Python sidecar
+        env:
+          # build_backend.sh uses `rustc --print host-tuple` for the triple,
+          # but cross-compiling (e.g. x86_64 on arm runner) needs an override.
+          TAURI_TARGET_TRIPLE: ${{ matrix.rust_target }}
+        run: |
+          cd packages/backend
+          uv sync --frozen
+          uv add --dev pyinstaller 2>/dev/null || true
+          uv run pyinstaller --clean --noconfirm orthrus.spec
+          mkdir -p ../desktop/binaries
+          cp dist/orthrus-backend ../desktop/binaries/orthrus-backend-${{ matrix.rust_target }}
+          chmod +x ../desktop/binaries/orthrus-backend-${{ matrix.rust_target }}
+          echo "Built sidecar for ${{ matrix.rust_target }}"
+          ls -lh ../desktop/binaries/
+
+      # --- Bun + frontend ---
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install JS dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build web frontend
+        run: bun run build:web
+
+      # --- Rust ---
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './packages/desktop/src-tauri -> target'
+
+      # --- Build & release ---
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Uncomment when you have an Apple Developer certificate:
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: './packages/desktop'
+          tagName: v__VERSION__
+          releaseName: 'Orthrus v__VERSION__'
+          releaseBody: |
+            See the assets below to download and install.
+
+            **macOS**: Download the `.dmg` file for your architecture (Apple Silicon or Intel).
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

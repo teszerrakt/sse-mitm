@@ -28,11 +28,20 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:"
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:* ws://localhost:* https://github.com https://objects.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI1MkZFNEUxOUNBNjM0MDgKUldRSU5LYWM0ZVF2SlNoUWgwSU4xN2FscGo1aGt1Q2xEL216Z1liUUthY3pRUTVqR1J1RTkrS3cK",
+      "endpoints": [
+        "https://github.com/teszerrakt/orthrus/releases/latest/download/latest.json"
+      ]
     }
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": ["app", "dmg"],
     "externalBin": ["../binaries/orthrus-backend"],
     "icon": [
