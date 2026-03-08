@@ -9,6 +9,7 @@ import { VersionInfo } from "./VersionInfo";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { NativeSelect, NativeSelectOption } from "./ui/native-select";
+import { Switch } from "./ui/switch";
 import type { ApiBreakpointRule, BreakpointStage } from "../types";
 
 interface Props {
@@ -86,10 +87,22 @@ export function SettingsPage({ onBack }: Props) {
     [config],
   );
 
+  const handleApiRuleToggle = useCallback(
+    (idx: number, enabled: boolean) => {
+      setApiRules((prev) => {
+        const base = prev ?? config?.api_breakpoint_patterns ?? [];
+        const next = [...base];
+        next[idx] = { ...next[idx], enabled };
+        return next;
+      });
+    },
+    [config],
+  );
+
   const handleAddApiRule = useCallback(() => {
     setApiRules((prev) => {
       const base = prev ?? config?.api_breakpoint_patterns ?? [];
-      return [...base, { pattern: "*/api/*", stage: "both" as BreakpointStage }];
+      return [...base, { pattern: "*/api/*", stage: "both" as BreakpointStage, enabled: true }];
     });
   }, [config]);
 
@@ -236,7 +249,16 @@ export function SettingsPage({ onBack }: Props) {
 
               <div className="space-y-2">
                 {effectiveApiRules.map((rule, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-2 ${!rule.enabled ? "opacity-50" : ""}`}
+                  >
+                    <Switch
+                      size="sm"
+                      checked={rule.enabled}
+                      onCheckedChange={(checked) => handleApiRuleToggle(idx, checked)}
+                      title={rule.enabled ? "Enabled — click to disable" : "Disabled — click to enable"}
+                    />
                     <Input
                       type="text"
                       value={rule.pattern}

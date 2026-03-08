@@ -35,22 +35,27 @@ def _get_lan_ip() -> str:
         return "127.0.0.1"
 
 
-def _normalize_breakpoint_rules(raw: list) -> list[dict[str, str]]:
+def _normalize_breakpoint_rules(raw: list) -> list[dict[str, str | bool]]:
     """Normalize api_breakpoint_patterns entries.
 
     Accepts both legacy bare strings (``"*/api/*"``) and full rule objects
-    (``{"pattern": "*/api/*", "stage": "both"}``).  Bare strings are promoted
-    to ``{"pattern": <str>, "stage": "both"}``.
+    (``{"pattern": "*/api/*", "stage": "both", "enabled": true}``).  Bare
+    strings are promoted to ``{"pattern": <str>, "stage": "both", "enabled": True}``.
     """
-    result: list[dict[str, str]] = []
+    result: list[dict[str, str | bool]] = []
     for item in raw:
         if isinstance(item, str):
-            result.append({"pattern": item, "stage": "both"})
+            result.append({"pattern": item, "stage": "both", "enabled": True})
         elif isinstance(item, dict) and "pattern" in item:
             stage = item.get("stage", "both")
             if stage not in _VALID_STAGES:
                 stage = "both"
-            result.append({"pattern": item["pattern"], "stage": stage})
+            enabled = item.get("enabled", True)
+            if not isinstance(enabled, bool):
+                enabled = True
+            result.append(
+                {"pattern": item["pattern"], "stage": stage, "enabled": enabled}
+            )
     return result
 
 
@@ -137,6 +142,11 @@ async def put_config_handler(request: web.Request) -> web.Response:
                         {
                             "error": f"Invalid stage '{stage}' — must be one of: request, response, both"
                         },
+                        status=400,
+                    )
+                if "enabled" in item and not isinstance(item["enabled"], bool):
+                    return web.json_response(
+                        {"error": "The 'enabled' field must be a boolean"},
                         status=400,
                     )
             else:

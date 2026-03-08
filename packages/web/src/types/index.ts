@@ -284,6 +284,7 @@ export type BreakpointStage = "request" | "response" | "both";
 export interface ApiBreakpointRule {
   pattern: string;
   stage: BreakpointStage;
+  enabled: boolean;
 }
 
 export interface AppConfig {

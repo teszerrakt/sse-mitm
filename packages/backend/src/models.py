@@ -52,6 +52,7 @@ class ApiBreakpointRule(BaseModel):
 
     pattern: str
     stage: BreakpointStage = BreakpointStage.BOTH
+    enabled: bool = True
 
 
 # ---------------------------------------------------------------------------

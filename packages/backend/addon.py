@@ -40,21 +40,26 @@ _MAX_BODY_CAPTURE = 512 * 1024  # 512 KB
 _VALID_STAGES = {"request", "response", "both"}
 
 
-def _normalize_breakpoint_rules(raw: list[Any]) -> list[dict[str, str]]:
+def _normalize_breakpoint_rules(raw: list[Any]) -> list[dict[str, str | bool]]:
     """Normalize api_breakpoint_patterns from config.
 
-    Accepts both legacy bare strings and ``{"pattern": ..., "stage": ...}``
-    objects.  Bare strings are promoted to ``{"pattern": <str>, "stage": "both"}``.
+    Accepts both legacy bare strings and ``{"pattern": ..., "stage": ..., "enabled": ...}``
+    objects.  Bare strings are promoted to ``{"pattern": <str>, "stage": "both", "enabled": True}``.
     """
-    result: list[dict[str, str]] = []
+    result: list[dict[str, str | bool]] = []
     for item in raw:
         if isinstance(item, str):
-            result.append({"pattern": item, "stage": "both"})
+            result.append({"pattern": item, "stage": "both", "enabled": True})
         elif isinstance(item, dict) and "pattern" in item:
             stage = item.get("stage", "both")
             if stage not in _VALID_STAGES:
                 stage = "both"
-            result.append({"pattern": item["pattern"], "stage": stage})
+            enabled = item.get("enabled", True)
+            if not isinstance(enabled, bool):
+                enabled = True
+            result.append(
+                {"pattern": item["pattern"], "stage": stage, "enabled": enabled}
+            )
     return result
 
 
@@ -180,8 +185,8 @@ class SSEInterceptorAddon:
         self._relay_host: str = relay_host or config["relay_host"]
         self._relay_port: int = relay_port or int(config["relay_port"])
         self._patterns: list[str] = list(config["sse_patterns"])
-        self._api_breakpoint_rules: list[dict[str, str]] = _normalize_breakpoint_rules(
-            config.get("api_breakpoint_patterns", [])
+        self._api_breakpoint_rules: list[dict[str, str | bool]] = (
+            _normalize_breakpoint_rules(config.get("api_breakpoint_patterns", []))
         )
         self._config_mtime: float = self._get_config_mtime()
         self._last_tls_error_at: dict[tuple[str, str | None], float] = {}
@@ -231,10 +236,10 @@ class SSEInterceptorAddon:
     def _is_sse_request(self, url: str) -> bool:
         return any(fnmatch(url, p) for p in self._patterns)
 
-    def _match_api_breakpoint(self, url: str) -> dict[str, str] | None:
-        """Return the first matching breakpoint rule, or None."""
+    def _match_api_breakpoint(self, url: str) -> dict[str, str | bool] | None:
+        """Return the first matching *enabled* breakpoint rule, or None."""
         for rule in self._api_breakpoint_rules:
-            if fnmatch(url, rule["pattern"]):
+            if rule.get("enabled", True) and fnmatch(url, str(rule["pattern"])):
                 return rule
         return None
 
