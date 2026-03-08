@@ -197,7 +197,7 @@ async def _read_upstream(
                 message=str(exc),
             ).model_dump_json()
         )
-        await session.close_stream()
+        await session.fail_stream()
 
     await stream_upstream_sse(
         client_session=http_client,

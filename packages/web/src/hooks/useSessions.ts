@@ -73,9 +73,12 @@ export function useSessions() {
         case "stream_end": {
           const s = next[msg.session_id];
           if (!s) break;
+          // Don't overwrite "error" — stream_end always fires in the finally
+          // block, but if an error was already reported, preserve that status.
+          const finalStatus = s.info.status === "error" ? "error" : "completed";
           next[msg.session_id] = {
             ...s,
-            info: { ...s.info, status: "completed" },
+            info: { ...s.info, status: finalStatus },
           };
           break;
         }
