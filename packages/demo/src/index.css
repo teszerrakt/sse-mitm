@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+/*
+ * SkySearch — Flight Demo design tokens
+ * Dark airline terminal theme with sky blue accents
+ */
+@layer base {
+  :root {
+    /* ── SkySearch design tokens ─────────────────────────────── */
+    --bg: #0a0e1a;
+    --bg-card: #111827;
+    --bg-elevated: #1e293b;
+    --bg-hover: #263347;
+    --border: #1e3a5f;
+    --border-subtle: #162a45;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+    --accent: #0ea5e9;
+    --accent-hover: #38bdf8;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gold: #fbbf24;
+
+    /* ── shadcn CSS variable bridge ─────────────────────────── */
+    --radius: 0.5rem;
+
+    --background: var(--bg);
+    --foreground: var(--text);
+
+    --card: var(--bg-card);
+    --card-foreground: var(--text);
+
+    --popover: var(--bg-card);
+    --popover-foreground: var(--text);
+
+    --primary: var(--accent);
+    --primary-foreground: #ffffff;
+
+    --secondary: var(--bg-elevated);
+    --secondary-foreground: var(--text);
+
+    --muted: var(--bg-elevated);
+    --muted-foreground: var(--text-muted);
+
+    --accent-foreground: #ffffff;
+
+    --destructive: var(--danger);
+    --destructive-foreground: #ffffff;
+
+    --input: var(--border);
+    --ring: var(--accent);
+
+    color-scheme: dark;
+  }
+}
+
+/* ── Register tokens with Tailwind v4 @theme ─────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-border: var(--border);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* ── SkySearch flat color tokens ───────────────────────────── */
+  --color-panel: var(--bg-card);
+  --color-elevated: var(--bg-elevated);
+  --color-hover: var(--bg-hover);
+  --color-dim: var(--text-dim);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-gold: var(--gold);
+  --color-border-subtle: var(--border-subtle);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease-out both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--border-subtle) 25%,
+    var(--bg-elevated) 50%,
+    var(--border-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}

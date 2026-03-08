@@ -42,6 +42,13 @@
     "typecheck": "bun run typecheck:web && bun run typecheck:backend",
     "typecheck:web": "bun --cwd packages/web tsc -b",
     "typecheck:backend": "cd packages/backend && uv run mypy src/ relay_server.py addon.py",
-    "install:all": "./scripts/install.sh"
+    "install:all": "./scripts/install.sh",
+    "dev:demo": "bun run dev:demo:server & bun run dev:demo:ui",
+    "dev:demo:server": "bun --cwd packages/demo dev:server",
+    "dev:demo:ui": "bun --cwd packages/demo dev",
+    "build:demo": "bun --cwd packages/demo build",
+    "lint:demo": "bun --cwd packages/demo lint",
+    "fmt:demo": "bun --cwd packages/demo fmt",
+    "typecheck:demo": "bun --cwd packages/demo tsc -b"
   }
 }
