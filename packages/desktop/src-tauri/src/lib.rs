@@ -101,17 +101,22 @@ pub fn run() {
 
                     // Use ~/Library/Application Support/com.teszerrakt.orthrus/mocks
                     // as the writable mocks directory (PyInstaller runs from a read-only temp dir)
-                    let mocks_dir = dirs::data_dir()
-                        .map(|d| d.join("com.teszerrakt.orthrus").join("mocks"))
-                        .unwrap_or_else(|| PathBuf::from("mocks"));
+                    let app_data_dir = dirs::data_dir()
+                        .map(|d| d.join("com.teszerrakt.orthrus"))
+                        .unwrap_or_else(|| PathBuf::from("orthrus-data"));
 
-                    // Ensure the mocks directory exists
+                    let mocks_dir = app_data_dir.join("mocks");
+                    let config_file = app_data_dir.join("config.json");
+
+                    // Ensure the app data and mocks directories exist
                     if let Err(e) = fs::create_dir_all(&mocks_dir) {
                         log(&log_handle, &format!("[setup] failed to create mocks dir: {e}"));
                     }
 
                     let mocks_dir_str = mocks_dir.to_string_lossy().to_string();
+                    let config_file_str = config_file.to_string_lossy().to_string();
                     log(&log_handle, &format!("[setup] mocks dir: {mocks_dir_str}"));
+                    log(&log_handle, &format!("[setup] config file: {config_file_str}"));
 
                     let sidecar_result = app
                         .shell()
@@ -120,6 +125,7 @@ pub fn run() {
                             "--relay-port", "29000",
                             "--proxy-port", "28080",
                             "--mocks-dir", &mocks_dir_str,
+                            "--config", &config_file_str,
                         ]));
 
                     match sidecar_result {

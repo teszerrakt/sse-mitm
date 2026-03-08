@@ -29,9 +29,9 @@ def tmp_mocks_dir(tmp_path: Path) -> Path:
 
 
 @pytest_asyncio.fixture
-async def app(tmp_mocks_dir: Path) -> web.Application:
+async def app(tmp_mocks_dir: Path, tmp_config: Path) -> web.Application:
     """Create the aiohttp application for testing."""
-    return create_app(mocks_dir=tmp_mocks_dir)
+    return create_app(mocks_dir=tmp_mocks_dir, config_file=tmp_config)
 
 
 @pytest_asyncio.fixture

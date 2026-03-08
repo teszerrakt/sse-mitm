@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -17,10 +18,10 @@ from mitmproxy import tls
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(
-    os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent))
+_DEFAULT_CONFIG_FILE = (
+    Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent)))
+    / "config.json"
 )
-CONFIG_FILE = _PROJECT_ROOT / "config.json"
 
 _DEFAULT_CONFIG: dict[str, Any] = {
     "relay_host": "localhost",
@@ -63,12 +64,13 @@ def _normalize_breakpoint_rules(raw: list[Any]) -> list[dict[str, str | bool]]:
     return result
 
 
-def _load_config() -> dict[str, Any]:
-    if CONFIG_FILE.exists():
+def _load_config(config_file: Path | None = None) -> dict[str, Any]:
+    path = config_file or _DEFAULT_CONFIG_FILE
+    if path.exists():
         try:
-            return {**_DEFAULT_CONFIG, **json.loads(CONFIG_FILE.read_text())}
+            return {**_DEFAULT_CONFIG, **json.loads(path.read_text())}
         except Exception as exc:
-            logger.warning("Failed to load config.json: %s — using defaults", exc)
+            logger.warning("Failed to load %s: %s — using defaults", path, exc)
     return dict(_DEFAULT_CONFIG)
 
 
@@ -180,8 +182,10 @@ class SSEInterceptorAddon:
         self,
         relay_host: str | None = None,
         relay_port: int | None = None,
+        config_file: Path | None = None,
     ) -> None:
-        config = _load_config()
+        self._config_file: Path = config_file or _DEFAULT_CONFIG_FILE
+        config = _load_config(self._config_file)
         self._relay_host: str = relay_host or config["relay_host"]
         self._relay_port: int = relay_port or int(config["relay_port"])
         self._patterns: list[str] = list(config["sse_patterns"])
@@ -205,7 +209,7 @@ class SSEInterceptorAddon:
 
     def _get_config_mtime(self) -> float:
         try:
-            return os.path.getmtime(CONFIG_FILE)
+            return os.path.getmtime(self._config_file)
         except OSError:
             return 0.0
 
@@ -213,7 +217,7 @@ class SSEInterceptorAddon:
         mtime = self._get_config_mtime()
         if mtime != self._config_mtime:
             self._config_mtime = mtime
-            config = _load_config()
+            config = _load_config(self._config_file)
             self._relay_host = config["relay_host"]
             self._relay_port = int(config["relay_port"])
             self._patterns = list(config["sse_patterns"])
@@ -254,7 +258,7 @@ class SSEInterceptorAddon:
     # mitmproxy hooks
     # ------------------------------------------------------------------
 
-    def request(self, flow: http.HTTPFlow) -> None:
+    async def request(self, flow: http.HTTPFlow) -> None:
         """
         Called when a complete HTTP request has been received.
 
@@ -263,6 +267,10 @@ class SSEInterceptorAddon:
         2. SSE pattern match — rewrite to relay /relay (existing behavior)
         3. API breakpoint match — block via /traffic/intercept
         4. Everything else — fire-and-forget log via /traffic/log
+
+        This hook is async so that blocking intercept calls
+        (which wait for user action) run in a thread and don't
+        freeze the shared asyncio event loop.
         """
         self._reload_if_changed()
 
@@ -277,12 +285,14 @@ class SSEInterceptorAddon:
             self._rewrite_to_relay(flow, url)
             return
 
-        # 2. API breakpoint — synchronously block until user acts
+        # 2. API breakpoint — block until user acts (runs in thread pool
+        #    so the event loop stays responsive)
         rule = self._match_api_breakpoint(url)
         if rule is not None and rule["stage"] in ("request", "both"):
             logger.info("Breakpoint hit (request): %s %s", flow.request.method, url)
             req_data = _extract_request_data(flow)
-            result = self._post_to_relay(
+            result = await asyncio.to_thread(
+                self._post_to_relay,
                 "/traffic/intercept",
                 {
                     "phase": "request",
@@ -312,12 +322,16 @@ class SSEInterceptorAddon:
             },
         )
 
-    def response(self, flow: http.HTTPFlow) -> None:
+    async def response(self, flow: http.HTTPFlow) -> None:
         """
         Called when a complete HTTP response has been received.
 
         SSE flows (rewritten to /relay) are skipped — they handle their own
         streaming. All other flows get logged or intercepted at response phase.
+
+        This hook is async so that blocking intercept calls
+        (which wait for user action) run in a thread and don't
+        freeze the shared asyncio event loop.
         """
         # Skip relay traffic and SSE-rewritten flows
         if self._is_relay_request(flow):
@@ -338,7 +352,8 @@ class SSEInterceptorAddon:
             )
             req_data = _extract_request_data(flow)
             resp_data = _extract_response_data(flow)
-            result = self._post_to_relay(
+            result = await asyncio.to_thread(
+                self._post_to_relay,
                 "/traffic/intercept",
                 {
                     "phase": "response",
@@ -510,7 +525,3 @@ def _url_encode(url: str) -> str:
     from urllib.parse import quote
 
     return quote(url, safe="")
-
-
-# mitmproxy entry point
-addons = [SSEInterceptorAddon()]

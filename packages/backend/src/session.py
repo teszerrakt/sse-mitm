@@ -154,9 +154,16 @@ class Session:
         await self._maybe_close_after_last_pending()
 
     async def close_stream(self) -> None:
-        if self.status == SessionStatus.COMPLETED:
+        if self.status in (SessionStatus.COMPLETED, SessionStatus.ERROR):
             return
         self.status = SessionStatus.COMPLETED
+        await self._approved.put(None)
+
+    async def fail_stream(self) -> None:
+        """Close the stream due to an upstream error."""
+        if self.status in (SessionStatus.COMPLETED, SessionStatus.ERROR):
+            return
+        self.status = SessionStatus.ERROR
         await self._approved.put(None)
 
     # ------------------------------------------------------------------

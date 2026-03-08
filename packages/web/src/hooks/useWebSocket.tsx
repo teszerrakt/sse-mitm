@@ -1,21 +1,29 @@
-import { useEffect, useRef, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, useCallback, type ReactNode } from "react";
 import type { ServerMsg, ClientCmd } from "../types";
 import { apiWsUrl } from "../utils/api";
 
 type MessageHandler = (msg: ServerMsg) => void;
 
-export function useWebSocket(onMessage: MessageHandler) {
-  const wsRef = useRef<WebSocket | null>(null);
-  const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage;
+interface WebSocketContextValue {
+  send: (cmd: ClientCmd) => void;
+  subscribe: (handler: MessageHandler) => () => void;
+}
 
+const WebSocketContext = createContext<WebSocketContextValue | null>(null);
+
+/**
+ * Provides a single shared WebSocket connection to the backend.
+ * All hooks that need WS messages subscribe via `useSharedWebSocket()`.
+ */
+export function WebSocketProvider({ children }: { children: ReactNode }) {
+  const wsRef = useRef<WebSocket | null>(null);
+  const handlersRef = useRef<Set<MessageHandler>>(new Set());
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   const connectingRef = useRef(false);
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
-    // Guard against StrictMode double-mount: if already connecting/open, skip
     if (connectingRef.current) return;
     const existing = wsRef.current;
     if (existing && (existing.readyState === WebSocket.CONNECTING || existing.readyState === WebSocket.OPEN)) {
@@ -33,7 +41,9 @@ export function useWebSocket(onMessage: MessageHandler) {
     ws.onmessage = (e) => {
       try {
         const msg: ServerMsg = JSON.parse(e.data);
-        onMessageRef.current(msg);
+        for (const handler of handlersRef.current) {
+          handler(msg);
+        }
       } catch {
         console.error("Failed to parse WS message", e.data);
       }
@@ -42,7 +52,6 @@ export function useWebSocket(onMessage: MessageHandler) {
     ws.onclose = () => {
       connectingRef.current = false;
       if (!mountedRef.current) return;
-      // Reconnect after 2s
       reconnectTimerRef.current = setTimeout(connect, 2000);
     };
 
@@ -73,5 +82,33 @@ export function useWebSocket(onMessage: MessageHandler) {
     }
   }, []);
 
-  return { send };
+  const subscribe = useCallback((handler: MessageHandler) => {
+    handlersRef.current.add(handler);
+    return () => {
+      handlersRef.current.delete(handler);
+    };
+  }, []);
+
+  const value = useRef({ send, subscribe }).current;
+
+  return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
+}
+
+/**
+ * Subscribe to incoming WebSocket messages and get a `send` function.
+ * Must be used inside a `<WebSocketProvider>`.
+ */
+export function useSharedWebSocket(onMessage: MessageHandler) {
+  const ctx = useContext(WebSocketContext);
+  if (!ctx) throw new Error("useSharedWebSocket must be used inside <WebSocketProvider>");
+
+  const onMessageRef = useRef(onMessage);
+  onMessageRef.current = onMessage;
+
+  useEffect(() => {
+    const handler: MessageHandler = (msg) => onMessageRef.current(msg);
+    return ctx.subscribe(handler);
+  }, [ctx]);
+
+  return { send: ctx.send };
 }

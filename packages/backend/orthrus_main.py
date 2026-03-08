@@ -27,9 +27,12 @@ async def _start_relay(
     port: int,
     mocks_dir: Path,
     auto_forward: bool,
+    config_file: Path | None = None,
 ) -> web.AppRunner:
     """Start the aiohttp relay server without blocking the event loop."""
-    app = create_app(mocks_dir=mocks_dir, auto_forward=auto_forward)
+    app = create_app(
+        mocks_dir=mocks_dir, auto_forward=auto_forward, config_file=config_file
+    )
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, host, port)
@@ -44,6 +47,7 @@ async def _start_mitmproxy(
     ssl_insecure: bool,
     relay_host: str,
     relay_port: int,
+    config_file: Path | None = None,
 ) -> DumpMaster:
     """Start mitmproxy DumpMaster with the SSE interceptor addon."""
     from addon import SSEInterceptorAddon
@@ -58,6 +62,7 @@ async def _start_mitmproxy(
         SSEInterceptorAddon(
             relay_host=relay_host,
             relay_port=relay_port,
+            config_file=config_file,
         )
     )
     logger.info("mitmproxy listening on %s:%d", listen_host, listen_port)
@@ -67,12 +72,14 @@ async def _start_mitmproxy(
 async def run(args: argparse.Namespace) -> None:
     """Run both relay server and mitmproxy on a shared event loop."""
     mocks_dir = Path(args.mocks_dir)
+    config_file = Path(args.config) if args.config else None
 
     runner = await _start_relay(
         host=args.host,
         port=args.relay_port,
         mocks_dir=mocks_dir,
         auto_forward=args.auto_forward,
+        config_file=config_file,
     )
 
     master = await _start_mitmproxy(
@@ -81,6 +88,7 @@ async def run(args: argparse.Namespace) -> None:
         ssl_insecure=True,
         relay_host="localhost",
         relay_port=args.relay_port,
+        config_file=config_file,
     )
 
     loop = asyncio.get_running_loop()
@@ -127,6 +135,11 @@ def main() -> None:
         "--auto-forward",
         action="store_true",
         help="Auto-forward all events without UI breakpoints",
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Path to config.json (default: auto-detected from ORTHRUS_ROOT)",
     )
     args = parser.parse_args()
 

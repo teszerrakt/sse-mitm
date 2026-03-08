@@ -4,9 +4,11 @@ import argparse
 import asyncio
 import logging
 import os
+import ssl
 from pathlib import Path
 
 import aiohttp
+import certifi
 from aiohttp import web
 from aiohttp.typedefs import Handler
 
@@ -57,10 +59,16 @@ async def cors_middleware(
     return response
 
 
-_PROJECT_ROOT = Path(
-    os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent))
+_DEFAULT_CONFIG_FILE = (
+    Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent)))
+    / "config.json"
 )
-UI_DIST = _PROJECT_ROOT / "packages" / "web" / "dist"
+UI_DIST = (
+    Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent)))
+    / "packages"
+    / "web"
+    / "dist"
+)
 
 
 async def _ws_broadcaster(app: web.Application):
@@ -70,7 +78,7 @@ async def _ws_broadcaster(app: web.Application):
         dead: list[web.WebSocketResponse] = []
         for ws in app["ws_clients"]:
             try:
-                await ws.send_str(message)
+                await asyncio.wait_for(ws.send_str(message), timeout=5.0)
             except Exception:
                 dead.append(ws)
         for ws in dead:
@@ -80,7 +88,11 @@ async def _ws_broadcaster(app: web.Application):
 
 
 async def on_startup(app: web.Application) -> None:
-    app["http_client"] = aiohttp.ClientSession()
+    # Use certifi CA bundle for outbound HTTPS — required inside PyInstaller
+    # where Python's default ssl module can't find the system CA store.
+    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+    connector = aiohttp.TCPConnector(ssl=ssl_ctx)
+    app["http_client"] = aiohttp.ClientSession(connector=connector)
     app["ws_clients"] = set()
     app["ws_broadcaster"] = await _ws_broadcaster(app)
 
@@ -100,15 +112,21 @@ async def on_shutdown(app: web.Application) -> None:
     logger.info("Relay server shut down")
 
 
-def create_app(mocks_dir: Path, auto_forward: bool = False) -> web.Application:
+def create_app(
+    mocks_dir: Path,
+    auto_forward: bool = False,
+    config_file: Path | None = None,
+) -> web.Application:
     app = web.Application(middlewares=[cors_middleware])
 
     # Shared state
     app["session_manager"] = SessionManager()
     app["traffic_store"] = TrafficStore()
+    app["traffic_flow_map"] = {}
     app["mock_loader"] = MockLoader(mocks_dir)
     app["mocks_dir"] = mocks_dir
     app["auto_forward_default"] = auto_forward
+    app["config_file"] = config_file or _DEFAULT_CONFIG_FILE
 
     # Routes
     app.router.add_post("/relay", relay_handler)

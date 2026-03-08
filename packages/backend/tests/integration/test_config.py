@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -26,8 +25,8 @@ class TestGetConfig:
         self, client: TestClient, tmp_path: Path
     ) -> None:
         missing = tmp_path / "nonexistent_config.json"
-        with patch("src.handlers.config.CONFIG_FILE", missing):
-            resp = await client.get("/config")
+        client.app["config_file"] = missing
+        resp = await client.get("/config")
         assert resp.status == 200
         data = await resp.json()
         assert data["sse_patterns"] == ["*/sse*", "*/stream*"]
@@ -38,8 +37,8 @@ class TestGetConfig:
     ) -> None:
         cfg = tmp_path / "config.json"
         cfg.write_text(json.dumps({"sse_patterns": ["*/custom*"]}))
-        with patch("src.handlers.config.CONFIG_FILE", cfg):
-            resp = await client.get("/config")
+        client.app["config_file"] = cfg
+        resp = await client.get("/config")
         data = await resp.json()
         assert data["sse_patterns"] == ["*/custom*"]
 
@@ -51,11 +50,11 @@ class TestPutConfig:
     async def test_updates_sse_patterns(
         self, client: TestClient, tmp_config: Path
     ) -> None:
-        with patch("src.handlers.config.CONFIG_FILE", tmp_config):
-            resp = await client.put(
-                "/config",
-                json={"sse_patterns": ["*/new-pattern*"]},
-            )
+        client.app["config_file"] = tmp_config
+        resp = await client.put(
+            "/config",
+            json={"sse_patterns": ["*/new-pattern*"]},
+        )
         assert resp.status == 200
         data = await resp.json()
         assert data["sse_patterns"] == ["*/new-pattern*"]
@@ -68,11 +67,11 @@ class TestPutConfig:
         self, client: TestClient, tmp_config: Path
     ) -> None:
         """PUT response must include proxy_address so the frontend can stay in sync."""
-        with patch("src.handlers.config.CONFIG_FILE", tmp_config):
-            resp = await client.put(
-                "/config",
-                json={"sse_patterns": ["*/sse*"]},
-            )
+        client.app["config_file"] = tmp_config
+        resp = await client.put(
+            "/config",
+            json={"sse_patterns": ["*/sse*"]},
+        )
         assert resp.status == 200
         data = await resp.json()
         assert "proxy_address" in data
@@ -121,11 +120,11 @@ class TestPutConfig:
     ) -> None:
         """PUT new patterns, then GET should reflect the change."""
         new_patterns = ["*/roundtrip-a*", "*/roundtrip-b*"]
-        with patch("src.handlers.config.CONFIG_FILE", tmp_config):
-            put_resp = await client.put("/config", json={"sse_patterns": new_patterns})
-            assert put_resp.status == 200
+        client.app["config_file"] = tmp_config
+        put_resp = await client.put("/config", json={"sse_patterns": new_patterns})
+        assert put_resp.status == 200
 
-            get_resp = await client.get("/config")
-            assert get_resp.status == 200
-            data = await get_resp.json()
-            assert data["sse_patterns"] == new_patterns
+        get_resp = await client.get("/config")
+        assert get_resp.status == 200
+        data = await get_resp.json()
+        assert data["sse_patterns"] == new_patterns

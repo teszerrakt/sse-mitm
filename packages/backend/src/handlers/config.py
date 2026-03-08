@@ -10,8 +10,9 @@ from aiohttp import web
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parents[4])))
-CONFIG_FILE = _PROJECT_ROOT / "config.json"
+_DEFAULT_CONFIG_FILE = (
+    Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parents[4]))) / "config.json"
+)
 
 _VALID_STAGES = {"request", "response", "both"}
 
@@ -59,10 +60,10 @@ def _normalize_breakpoint_rules(raw: list) -> list[dict[str, str | bool]]:
     return result
 
 
-def _read_config() -> dict:
-    if CONFIG_FILE.exists():
+def _read_config(config_file: Path) -> dict:
+    if config_file.exists():
         try:
-            on_disk = json.loads(CONFIG_FILE.read_text())
+            on_disk = json.loads(config_file.read_text())
             merged = {**_DEFAULT_CONFIG, **on_disk}
             # Normalize legacy string[] api_breakpoint_patterns to object[]
             merged["api_breakpoint_patterns"] = _normalize_breakpoint_rules(
@@ -70,17 +71,19 @@ def _read_config() -> dict:
             )
             return merged
         except Exception as exc:
-            logger.warning("Failed to read config.json: %s", exc)
+            logger.warning("Failed to read %s: %s", config_file, exc)
     return dict(_DEFAULT_CONFIG)
 
 
-def _write_config(data: dict) -> None:
-    CONFIG_FILE.write_text(json.dumps(data, indent=2) + "\n")
+def _write_config(config_file: Path, data: dict) -> None:
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    config_file.write_text(json.dumps(data, indent=2) + "\n")
 
 
 async def get_config_handler(request: web.Request) -> web.Response:
     """GET /config — return current config.json contents plus runtime info."""
-    config = _read_config()
+    config_file: Path = request.app["config_file"]
+    config = _read_config(config_file)
     proxy_port = int(os.environ.get("PROXY_PORT", 28080))
     config["proxy_address"] = f"{_get_lan_ip()}:{proxy_port}"
     return web.json_response(config)
@@ -158,7 +161,8 @@ async def put_config_handler(request: web.Request) -> web.Response:
                 )
 
     # Merge with existing config — only pattern fields are user-editable
-    current = _read_config()
+    config_file: Path = request.app["config_file"]
+    current = _read_config(config_file)
     if "sse_patterns" in body:
         current["sse_patterns"] = body["sse_patterns"]
     if "api_breakpoint_patterns" in body:
@@ -166,7 +170,7 @@ async def put_config_handler(request: web.Request) -> web.Response:
         current["api_breakpoint_patterns"] = _normalize_breakpoint_rules(
             body["api_breakpoint_patterns"]
         )
-    _write_config(current)
+    _write_config(config_file, current)
 
     logger.info(
         "Config updated — sse_patterns: %s, api_breakpoint_patterns: %s",
