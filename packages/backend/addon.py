@@ -18,10 +18,10 @@ from mitmproxy import tls
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(
-    os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent))
+_DEFAULT_CONFIG_FILE = (
+    Path(os.environ.get("ORTHRUS_ROOT", str(Path(__file__).parent.parent.parent)))
+    / "config.json"
 )
-CONFIG_FILE = _PROJECT_ROOT / "config.json"
 
 _DEFAULT_CONFIG: dict[str, Any] = {
     "relay_host": "localhost",
@@ -64,12 +64,13 @@ def _normalize_breakpoint_rules(raw: list[Any]) -> list[dict[str, str | bool]]:
     return result
 
 
-def _load_config() -> dict[str, Any]:
-    if CONFIG_FILE.exists():
+def _load_config(config_file: Path | None = None) -> dict[str, Any]:
+    path = config_file or _DEFAULT_CONFIG_FILE
+    if path.exists():
         try:
-            return {**_DEFAULT_CONFIG, **json.loads(CONFIG_FILE.read_text())}
+            return {**_DEFAULT_CONFIG, **json.loads(path.read_text())}
         except Exception as exc:
-            logger.warning("Failed to load config.json: %s — using defaults", exc)
+            logger.warning("Failed to load %s: %s — using defaults", path, exc)
     return dict(_DEFAULT_CONFIG)
 
 
@@ -181,8 +182,10 @@ class SSEInterceptorAddon:
         self,
         relay_host: str | None = None,
         relay_port: int | None = None,
+        config_file: Path | None = None,
     ) -> None:
-        config = _load_config()
+        self._config_file: Path = config_file or _DEFAULT_CONFIG_FILE
+        config = _load_config(self._config_file)
         self._relay_host: str = relay_host or config["relay_host"]
         self._relay_port: int = relay_port or int(config["relay_port"])
         self._patterns: list[str] = list(config["sse_patterns"])
@@ -206,7 +209,7 @@ class SSEInterceptorAddon:
 
     def _get_config_mtime(self) -> float:
         try:
-            return os.path.getmtime(CONFIG_FILE)
+            return os.path.getmtime(self._config_file)
         except OSError:
             return 0.0
 
@@ -214,7 +217,7 @@ class SSEInterceptorAddon:
         mtime = self._get_config_mtime()
         if mtime != self._config_mtime:
             self._config_mtime = mtime
-            config = _load_config()
+            config = _load_config(self._config_file)
             self._relay_host = config["relay_host"]
             self._relay_port = int(config["relay_port"])
             self._patterns = list(config["sse_patterns"])
@@ -522,7 +525,3 @@ def _url_encode(url: str) -> str:
     from urllib.parse import quote
 
     return quote(url, safe="")
-
-
-# mitmproxy entry point
-addons = [SSEInterceptorAddon()]
