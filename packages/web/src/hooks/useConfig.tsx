@@ -68,12 +68,13 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updated),
     });
+    // Read body exactly once — avoids consuming the stream twice.
+    const body: unknown = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      throw new Error(body.error ?? `Server returned ${res.status}`);
+      const err = body as { error?: string };
+      throw new Error(err.error ?? `Server returned ${res.status}`);
     }
-    const saved = (await res.json()) as AppConfig;
-    setConfig(saved);
+    setConfig(body as AppConfig);
   }, []);
 
   const reload = useCallback(() => setRevision((r) => r + 1), []);
