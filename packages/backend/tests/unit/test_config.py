@@ -35,6 +35,7 @@ class TestReadConfig:
             config = _read_config()
         assert config == {
             "sse_patterns": ["*/sse*", "*/stream*"],
+            "api_breakpoint_patterns": [],
             "relay_host": "127.0.0.1",
             "relay_port": 29000,
         }

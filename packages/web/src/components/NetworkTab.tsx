@@ -120,9 +120,6 @@ export function NetworkTab({
 
   return (
     <div className="flex flex-col h-full overflow-hidden border-r border-border">
-      <div className="px-3 py-2 text-muted-foreground text-xs uppercase tracking-widest border-b border-border bg-panel shrink-0">
-        SSE Sessions
-      </div>
 
       {groups.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground px-4 text-center">

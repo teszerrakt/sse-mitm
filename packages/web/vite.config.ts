@@ -25,6 +25,7 @@ export default defineConfig({
       '/sessions': 'http://localhost:29000',
       '/replay': 'http://localhost:29000',
       '/config': 'http://localhost:29000',
+      '/traffic': 'http://localhost:29000',
       '/ws': {
         target: 'ws://localhost:29000',
         ws: true,

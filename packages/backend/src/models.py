@@ -33,6 +33,117 @@ class RequestInfo(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# API breakpoint configuration
+# ---------------------------------------------------------------------------
+
+
+class BreakpointStage(str, Enum):
+    """Which phase of the HTTP flow to intercept."""
+
+    REQUEST = "request"
+    RESPONSE = "response"
+    BOTH = "both"
+
+
+class ApiBreakpointRule(BaseModel):
+    """A single API breakpoint pattern with its interception stage."""
+
+    model_config = ConfigDict(frozen=True)
+
+    pattern: str
+    stage: BreakpointStage = BreakpointStage.BOTH
+    enabled: bool = True
+
+
+# ---------------------------------------------------------------------------
+# HTTP Traffic types (for general API interception)
+# ---------------------------------------------------------------------------
+
+
+class TrafficStatus(str, Enum):
+    """Status of an HTTP traffic entry."""
+
+    PENDING_REQUEST = "pending_request"  # request intercepted, waiting for user
+    IN_FLIGHT = "in_flight"  # request sent to server, waiting for response
+    PENDING_RESPONSE = "pending_response"  # response intercepted, waiting for user
+    COMPLETED = "completed"  # response received and delivered
+    ERROR = "error"  # connection/server error
+    ABORTED = "aborted"  # user aborted the request
+
+
+class HttpRequestData(BaseModel):
+    """Captured HTTP request data — all fields that can be inspected/modified."""
+
+    model_config = ConfigDict(frozen=True)
+
+    method: str
+    url: str
+    scheme: str
+    host: str
+    port: int
+    path: str
+    http_version: str
+    headers: dict[str, str]
+    query: dict[str, str]
+    body: str | None = None
+    body_size: int = 0
+    content_type: str | None = None
+    client_ip: str | None = None
+    timestamp: float = 0.0
+
+
+class HttpResponseData(BaseModel):
+    """Captured HTTP response data — all fields that can be inspected/modified."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status_code: int
+    reason: str
+    http_version: str
+    headers: dict[str, str]
+    body: str | None = None
+    body_size: int = 0
+    content_type: str | None = None
+    timestamp_start: float = 0.0
+    timestamp_end: float | None = None
+
+
+class TrafficEntry(BaseModel):
+    """Summary of one HTTP request/response pair for the UI traffic list."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    status: TrafficStatus
+    is_intercepted: bool  # whether this is breakpointed (vs just observed)
+    request: HttpRequestData
+    response: HttpResponseData | None = None
+    duration_ms: float | None = None
+    created_at: float = 0.0
+
+
+class RequestModification(BaseModel):
+    """Modifications the user wants to apply to an intercepted request."""
+
+    model_config = ConfigDict(frozen=True)
+
+    method: str | None = None
+    url: str | None = None
+    headers: dict[str, str] | None = None
+    body: str | None = None
+
+
+class ResponseModification(BaseModel):
+    """Modifications the user wants to apply to an intercepted response."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status_code: int | None = None
+    headers: dict[str, str] | None = None
+    body: str | None = None
+
+
+# ---------------------------------------------------------------------------
 # Session types
 # ---------------------------------------------------------------------------
 
@@ -250,6 +361,26 @@ class TlsErrorMsg(BaseModel):
     timestamp: float
 
 
+# HTTP traffic messages
+
+
+class NewTrafficMsg(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    type: Literal["new_traffic"]
+    entry: TrafficEntry
+
+
+class TrafficUpdatedMsg(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    type: Literal["traffic_updated"]
+    entry: TrafficEntry
+
+
+class TrafficClearedMsg(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    type: Literal["traffic_cleared"]
+
+
 ServerMsg = Annotated[
     Union[
         NewSessionMsg,
@@ -259,6 +390,9 @@ ServerMsg = Annotated[
         SessionUpdatedMsg,
         SessionsClearedMsg,
         TlsErrorMsg,
+        NewTrafficMsg,
+        TrafficUpdatedMsg,
+        TrafficClearedMsg,
     ],
     Field(discriminator="type"),
 ]
@@ -331,6 +465,42 @@ class CloseSessionCmd(BaseModel):
     session_id: str
 
 
+# HTTP traffic commands
+
+
+class ResumeRequestCmd(BaseModel):
+    """Resume an intercepted request, optionally with modifications."""
+
+    model_config = ConfigDict(frozen=True)
+    type: Literal["resume_request"]
+    traffic_id: str
+    modifications: RequestModification | None = None
+
+
+class ResumeResponseCmd(BaseModel):
+    """Resume an intercepted response, optionally with modifications."""
+
+    model_config = ConfigDict(frozen=True)
+    type: Literal["resume_response"]
+    traffic_id: str
+    modifications: ResponseModification | None = None
+
+
+class AbortRequestCmd(BaseModel):
+    """Abort an intercepted request (return 502 to client)."""
+
+    model_config = ConfigDict(frozen=True)
+    type: Literal["abort_request"]
+    traffic_id: str
+
+
+class ClearTrafficCmd(BaseModel):
+    """Clear all traffic entries."""
+
+    model_config = ConfigDict(frozen=True)
+    type: Literal["clear_traffic"]
+
+
 ClientCmd = Annotated[
     Union[
         ForwardCmd,
@@ -342,6 +512,10 @@ ClientCmd = Annotated[
         SaveSessionCmd,
         ClearSessionsCmd,
         CloseSessionCmd,
+        ResumeRequestCmd,
+        ResumeResponseCmd,
+        AbortRequestCmd,
+        ClearTrafficCmd,
     ],
     Field(discriminator="type"),
 ]

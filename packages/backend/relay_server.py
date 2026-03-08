@@ -20,9 +20,16 @@ from src.handlers.config import get_config_handler, put_config_handler
 from src.handlers.relay import relay_handler
 from src.handlers.replay import replay_handler
 from src.handlers.sessions import clear_sessions_handler, sessions_handler
+from src.handlers.traffic import (
+    traffic_clear_handler,
+    traffic_intercept_handler,
+    traffic_list_handler,
+    traffic_log_handler,
+)
 from src.handlers.websocket import websocket_handler
 from src.mock_loader import MockLoader
 from src.session_manager import SessionManager
+from src.traffic_store import TrafficStore
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +105,7 @@ def create_app(mocks_dir: Path, auto_forward: bool = False) -> web.Application:
 
     # Shared state
     app["session_manager"] = SessionManager()
+    app["traffic_store"] = TrafficStore()
     app["mock_loader"] = MockLoader(mocks_dir)
     app["mocks_dir"] = mocks_dir
     app["auto_forward_default"] = auto_forward
@@ -114,6 +122,12 @@ def create_app(mocks_dir: Path, auto_forward: bool = False) -> web.Application:
     app.router.add_get("/cert/status", get_cert_status_handler)
     app.router.add_post("/cert/install", post_cert_install_handler)
     app.router.add_post("/tls-error", post_tls_error_handler)
+
+    # HTTP traffic routes
+    app.router.add_post("/traffic/log", traffic_log_handler)
+    app.router.add_post("/traffic/intercept", traffic_intercept_handler)
+    app.router.add_get("/traffic", traffic_list_handler)
+    app.router.add_delete("/traffic", traffic_clear_handler)
 
     # Serve React UI build artifacts
     if UI_DIST.exists():

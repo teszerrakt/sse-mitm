@@ -8,20 +8,31 @@ import { AppFooter } from "./AppFooter";
 import { VersionInfo } from "./VersionInfo";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { NativeSelect, NativeSelectOption } from "./ui/native-select";
+import { Switch } from "./ui/switch";
+import type { ApiBreakpointRule, BreakpointStage } from "../types";
 
 interface Props {
   onBack: () => void;
 }
 
+const STAGE_OPTIONS: { value: BreakpointStage; label: string }[] = [
+  { value: "both", label: "Both" },
+  { value: "request", label: "Request" },
+  { value: "response", label: "Response" },
+];
+
 export function SettingsPage({ onBack }: Props) {
   const { config, loading, error, saveConfig } = useConfig();
 
   const [patterns, setPatterns] = useState<string[] | null>(null);
+  const [apiRules, setApiRules] = useState<ApiBreakpointRule[] | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Initialise local patterns from fetched config (once)
   const effectivePatterns = patterns ?? config?.sse_patterns ?? [];
+  const effectiveApiRules = apiRules ?? config?.api_breakpoint_patterns ?? [];
 
   const handlePatternChange = useCallback(
     (idx: number, value: string) => {
@@ -52,25 +63,85 @@ export function SettingsPage({ onBack }: Props) {
     [config],
   );
 
+  const handleApiRulePatternChange = useCallback(
+    (idx: number, value: string) => {
+      setApiRules((prev) => {
+        const base = prev ?? config?.api_breakpoint_patterns ?? [];
+        const next = [...base];
+        next[idx] = { ...next[idx], pattern: value };
+        return next;
+      });
+    },
+    [config],
+  );
+
+  const handleApiRuleStageChange = useCallback(
+    (idx: number, stage: BreakpointStage) => {
+      setApiRules((prev) => {
+        const base = prev ?? config?.api_breakpoint_patterns ?? [];
+        const next = [...base];
+        next[idx] = { ...next[idx], stage };
+        return next;
+      });
+    },
+    [config],
+  );
+
+  const handleApiRuleToggle = useCallback(
+    (idx: number, enabled: boolean) => {
+      setApiRules((prev) => {
+        const base = prev ?? config?.api_breakpoint_patterns ?? [];
+        const next = [...base];
+        next[idx] = { ...next[idx], enabled };
+        return next;
+      });
+    },
+    [config],
+  );
+
+  const handleAddApiRule = useCallback(() => {
+    setApiRules((prev) => {
+      const base = prev ?? config?.api_breakpoint_patterns ?? [];
+      return [...base, { pattern: "*/api/*", stage: "both" as BreakpointStage, enabled: true }];
+    });
+  }, [config]);
+
+  const handleRemoveApiRule = useCallback(
+    (idx: number) => {
+      setApiRules((prev) => {
+        const base = prev ?? config?.api_breakpoint_patterns ?? [];
+        return base.filter((_, i) => i !== idx);
+      });
+    },
+    [config],
+  );
+
   const handleSave = useCallback(async () => {
     if (!config) return;
-    const trimmed = effectivePatterns.map((p) => p.trim()).filter(Boolean);
-    if (trimmed.length === 0) {
-      setSaveError("At least one pattern is required.");
+    const trimmedSse = effectivePatterns.map((p) => p.trim()).filter(Boolean);
+    if (trimmedSse.length === 0) {
+      setSaveError("At least one SSE pattern is required.");
       setSaveStatus("error");
       return;
     }
+    const trimmedApi = effectiveApiRules
+      .map((r) => ({ ...r, pattern: r.pattern.trim() }))
+      .filter((r) => r.pattern.length > 0);
     setSaveStatus("saving");
     setSaveError(null);
     try {
-      await saveConfig({ ...config, sse_patterns: trimmed });
+      await saveConfig({
+        ...config,
+        sse_patterns: trimmedSse,
+        api_breakpoint_patterns: trimmedApi,
+      });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Save failed");
       setSaveStatus("error");
     }
-  }, [config, effectivePatterns, saveConfig]);
+  }, [config, effectivePatterns, effectiveApiRules, saveConfig]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -112,14 +183,15 @@ export function SettingsPage({ onBack }: Props) {
 
         {config && (
           <>
-            {/* Intercept Patterns */}
+            {/* SSE Intercept Patterns */}
             <section>
               <div className="mb-3">
                 <h2 className="text-foreground text-sm font-semibold uppercase tracking-widest">
-                  Intercept Patterns
+                  SSE Intercept Patterns
                 </h2>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Glob patterns matched against the full request URL. Use{" "}
+                  Glob patterns for SSE stream interception. Matching requests are
+                  relayed through the breakpoint debugger. Use{" "}
                   <code className="text-accent bg-background px-1 rounded">*</code> as
                   wildcard.
                 </p>
@@ -159,6 +231,83 @@ export function SettingsPage({ onBack }: Props) {
                 <Plus size={14} />
                 Add pattern
               </Button>
+            </section>
+
+            {/* API Breakpoint Patterns */}
+            <section>
+              <div className="mb-3">
+                <h2 className="text-foreground text-sm font-semibold uppercase tracking-widest">
+                  API Breakpoint Patterns
+                </h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Glob patterns for HTTP request/response breakpoints. Matching
+                  requests are paused so you can inspect and modify them before
+                  forwarding. Set the <strong>stage</strong> to control whether
+                  the request, the response, or both are intercepted.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {effectiveApiRules.map((rule, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center gap-2 ${!rule.enabled ? "opacity-50" : ""}`}
+                  >
+                    <Switch
+                      size="sm"
+                      checked={rule.enabled}
+                      onCheckedChange={(checked) => handleApiRuleToggle(idx, checked)}
+                      title={rule.enabled ? "Enabled — click to disable" : "Disabled — click to enable"}
+                    />
+                    <Input
+                      type="text"
+                      value={rule.pattern}
+                      onChange={(e) => handleApiRulePatternChange(idx, e.target.value)}
+                      placeholder="*/api/*"
+                      className="flex-1"
+                      spellCheck={false}
+                    />
+                    <NativeSelect
+                      size="sm"
+                      value={rule.stage}
+                      onChange={(e) =>
+                        handleApiRuleStageChange(idx, e.target.value as BreakpointStage)
+                      }
+                    >
+                      {STAGE_OPTIONS.map((opt) => (
+                        <NativeSelectOption key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => handleRemoveApiRule(idx)}
+                      className="hover:text-danger hover:bg-danger/10"
+                      title="Remove pattern"
+                    >
+                      <X size={14} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                variant="accent"
+                size="xs"
+                onClick={handleAddApiRule}
+                className="mt-3"
+              >
+                <Plus size={14} />
+                Add pattern
+              </Button>
+
+              {effectiveApiRules.length === 0 && (
+                <p className="text-dim text-xs mt-2">
+                  No patterns — all HTTP traffic will be observed but not intercepted.
+                </p>
+              )}
             </section>
 
             {/* Server Info */}

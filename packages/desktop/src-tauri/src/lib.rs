@@ -88,75 +88,82 @@ pub fn run() {
                     }
                 }
 
-                // --- Spawn backend sidecar ---
-                log(&log_handle, "[setup] spawning sidecar 'orthrus-backend'...");
+                // --- Spawn backend sidecar (production only) ---
+                // In dev mode (`tauri dev`), the run_desktop.sh script manages
+                // relay + mitmproxy externally, so we skip the sidecar to avoid
+                // port conflicts.
+                if cfg!(debug_assertions) {
+                    log(&log_handle, "[setup] dev mode — skipping sidecar (managed by run_desktop.sh)");
+                } else {
+                    log(&log_handle, "[setup] spawning sidecar 'orthrus-backend'...");
 
-                // Use ~/Library/Application Support/com.teszerrakt.orthrus/mocks
-                // as the writable mocks directory (PyInstaller runs from a read-only temp dir)
-                let mocks_dir = dirs::data_dir()
-                    .map(|d| d.join("com.teszerrakt.orthrus").join("mocks"))
-                    .unwrap_or_else(|| PathBuf::from("mocks"));
+                    // Use ~/Library/Application Support/com.teszerrakt.orthrus/mocks
+                    // as the writable mocks directory (PyInstaller runs from a read-only temp dir)
+                    let mocks_dir = dirs::data_dir()
+                        .map(|d| d.join("com.teszerrakt.orthrus").join("mocks"))
+                        .unwrap_or_else(|| PathBuf::from("mocks"));
 
-                // Ensure the mocks directory exists
-                if let Err(e) = fs::create_dir_all(&mocks_dir) {
-                    log(&log_handle, &format!("[setup] failed to create mocks dir: {e}"));
-                }
+                    // Ensure the mocks directory exists
+                    if let Err(e) = fs::create_dir_all(&mocks_dir) {
+                        log(&log_handle, &format!("[setup] failed to create mocks dir: {e}"));
+                    }
 
-                let mocks_dir_str = mocks_dir.to_string_lossy().to_string();
-                log(&log_handle, &format!("[setup] mocks dir: {mocks_dir_str}"));
+                    let mocks_dir_str = mocks_dir.to_string_lossy().to_string();
+                    log(&log_handle, &format!("[setup] mocks dir: {mocks_dir_str}"));
 
-                let sidecar_result = app
-                    .shell()
-                    .sidecar("orthrus-backend")
-                    .map(|cmd| cmd.args([
-                        "--relay-port", "29000",
-                        "--proxy-port", "28080",
-                        "--mocks-dir", &mocks_dir_str,
-                    ]));
+                    let sidecar_result = app
+                        .shell()
+                        .sidecar("orthrus-backend")
+                        .map(|cmd| cmd.args([
+                            "--relay-port", "29000",
+                            "--proxy-port", "28080",
+                            "--mocks-dir", &mocks_dir_str,
+                        ]));
 
-                match sidecar_result {
-                    Ok(sidecar) => match sidecar.spawn() {
-                        Ok((mut rx, child)) => {
-                            log(&log_handle, &format!("[setup] sidecar spawned (pid={})", child.pid()));
-                            app.manage(BackendProcess(std::sync::Mutex::new(Some(child))));
+                    match sidecar_result {
+                        Ok(sidecar) => match sidecar.spawn() {
+                            Ok((mut rx, child)) => {
+                                log(&log_handle, &format!("[setup] sidecar spawned (pid={})", child.pid()));
+                                app.manage(BackendProcess(std::sync::Mutex::new(Some(child))));
 
-                            // Log sidecar stdout/stderr in background
-                            let bg_log = log_handle.clone();
-                            tauri::async_runtime::spawn(async move {
-                                use tauri_plugin_shell::process::CommandEvent;
+                                // Log sidecar stdout/stderr in background
+                                let bg_log = log_handle.clone();
+                                tauri::async_runtime::spawn(async move {
+                                    use tauri_plugin_shell::process::CommandEvent;
 
-                                while let Some(event) = rx.recv().await {
-                                    match event {
-                                        CommandEvent::Stdout(line) => {
-                                            let msg = String::from_utf8_lossy(&line);
-                                            log(&bg_log, &format!("[backend:out] {}", msg.trim()));
+                                    while let Some(event) = rx.recv().await {
+                                        match event {
+                                            CommandEvent::Stdout(line) => {
+                                                let msg = String::from_utf8_lossy(&line);
+                                                log(&bg_log, &format!("[backend:out] {}", msg.trim()));
+                                            }
+                                            CommandEvent::Stderr(line) => {
+                                                let msg = String::from_utf8_lossy(&line);
+                                                log(&bg_log, &format!("[backend:err] {}", msg.trim()));
+                                            }
+                                            CommandEvent::Terminated(payload) => {
+                                                log(
+                                                    &bg_log,
+                                                    &format!(
+                                                        "[backend] terminated: code={:?} signal={:?}",
+                                                        payload.code, payload.signal
+                                                    ),
+                                                );
+                                                break;
+                                            }
+                                            CommandEvent::Error(err) => {
+                                                log(&bg_log, &format!("[backend] error: {}", err));
+                                                break;
+                                            }
+                                            _ => {}
                                         }
-                                        CommandEvent::Stderr(line) => {
-                                            let msg = String::from_utf8_lossy(&line);
-                                            log(&bg_log, &format!("[backend:err] {}", msg.trim()));
-                                        }
-                                        CommandEvent::Terminated(payload) => {
-                                            log(
-                                                &bg_log,
-                                                &format!(
-                                                    "[backend] terminated: code={:?} signal={:?}",
-                                                    payload.code, payload.signal
-                                                ),
-                                            );
-                                            break;
-                                        }
-                                        CommandEvent::Error(err) => {
-                                            log(&bg_log, &format!("[backend] error: {}", err));
-                                            break;
-                                        }
-                                        _ => {}
                                     }
-                                }
-                            });
-                        }
-                        Err(e) => log(&log_handle, &format!("[setup] failed to spawn sidecar: {e}")),
-                    },
-                    Err(e) => log(&log_handle, &format!("[setup] failed to create sidecar command: {e}")),
+                                });
+                            }
+                            Err(e) => log(&log_handle, &format!("[setup] failed to spawn sidecar: {e}")),
+                        },
+                        Err(e) => log(&log_handle, &format!("[setup] failed to create sidecar command: {e}")),
+                    }
                 }
 
                 Ok(())

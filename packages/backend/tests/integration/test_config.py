@@ -64,6 +64,21 @@ class TestPutConfig:
         assert on_disk["sse_patterns"] == ["*/new-pattern*"]
 
     @pytest.mark.asyncio
+    async def test_put_response_includes_proxy_address(
+        self, client: TestClient, tmp_config: Path
+    ) -> None:
+        """PUT response must include proxy_address so the frontend can stay in sync."""
+        with patch("src.handlers.config.CONFIG_FILE", tmp_config):
+            resp = await client.put(
+                "/config",
+                json={"sse_patterns": ["*/sse*"]},
+            )
+        assert resp.status == 200
+        data = await resp.json()
+        assert "proxy_address" in data
+        assert ":" in data["proxy_address"]  # "ip:port" format
+
+    @pytest.mark.asyncio
     async def test_rejects_missing_sse_patterns(self, client: TestClient) -> None:
         resp = await client.put("/config", json={"other_field": "value"})
         assert resp.status == 400

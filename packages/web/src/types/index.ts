@@ -16,6 +16,68 @@ export interface RequestInfo {
   user_agent: string | null;
 }
 
+// ── HTTP Traffic types (general API interception) ────────────────────────────
+
+export type TrafficStatus =
+  | "pending_request"
+  | "in_flight"
+  | "pending_response"
+  | "completed"
+  | "error"
+  | "aborted";
+
+export interface HttpRequestData {
+  method: string;
+  url: string;
+  scheme: string;
+  host: string;
+  port: number;
+  path: string;
+  http_version: string;
+  headers: Record<string, string>;
+  query: Record<string, string>;
+  body: string | null;
+  body_size: number;
+  content_type: string | null;
+  client_ip: string | null;
+  timestamp: number;
+}
+
+export interface HttpResponseData {
+  status_code: number;
+  reason: string;
+  http_version: string;
+  headers: Record<string, string>;
+  body: string | null;
+  body_size: number;
+  content_type: string | null;
+  timestamp_start: number;
+  timestamp_end: number | null;
+}
+
+export interface TrafficEntry {
+  id: string;
+  status: TrafficStatus;
+  is_intercepted: boolean;
+  request: HttpRequestData;
+  response: HttpResponseData | null;
+  duration_ms: number | null;
+  created_at: number;
+}
+
+export interface RequestModification {
+  method?: string | null;
+  url?: string | null;
+  headers?: Record<string, string> | null;
+  body?: string | null;
+}
+
+export interface ResponseModification {
+  status_code?: number | null;
+  headers?: Record<string, string> | null;
+  body?: string | null;
+}
+
 // ── Session types ────────────────────────────────────────────────────────────
 
 export type SessionStatus = "active" | "completed" | "error";
@@ -83,6 +145,20 @@ export interface TlsErrorMsg {
   timestamp: number;
 }
 
+export interface NewTrafficMsg {
+  type: "new_traffic";
+  entry: TrafficEntry;
+}
+
+export interface TrafficUpdatedMsg {
+  type: "traffic_updated";
+  entry: TrafficEntry;
+}
+
+export interface TrafficClearedMsg {
+  type: "traffic_cleared";
+}
+
 export type ServerMsg =
   | NewSessionMsg
   | EventMsg
@@ -90,7 +166,10 @@ export type ServerMsg =
   | ErrorMsg
   | SessionUpdatedMsg
   | SessionsClearedMsg
-  | TlsErrorMsg;
+  | TlsErrorMsg
+  | NewTrafficMsg
+  | TrafficUpdatedMsg
+  | TrafficClearedMsg;
 
 // ── WebSocket UI → Server commands ───────────────────────────────────────────
 
@@ -147,6 +226,27 @@ export interface CloseSessionCmd {
   session_id: string;
 }
 
+export interface ResumeRequestCmd {
+  type: "resume_request";
+  traffic_id: string;
+  modifications?: RequestModification | null;
+}
+
+export interface ResumeResponseCmd {
+  type: "resume_response";
+  traffic_id: string;
+  modifications?: ResponseModification | null;
+}
+
+export interface AbortRequestCmd {
+  type: "abort_request";
+  traffic_id: string;
+}
+
+export interface ClearTrafficCmd {
+  type: "clear_traffic";
+}
+
 export type ClientCmd =
   | ForwardCmd
   | EditCmd
@@ -156,7 +256,11 @@ export type ClientCmd =
   | ForwardAllCmd
   | SaveSessionCmd
   | ClearSessionsCmd
-  | CloseSessionCmd;
+  | CloseSessionCmd
+  | ResumeRequestCmd
+  | ResumeResponseCmd
+  | AbortRequestCmd
+  | ClearTrafficCmd;
 
 // ── UI-local types ────────────────────────────────────────────────────────────
 
@@ -175,8 +279,17 @@ export interface SessionState {
 
 // ── Settings / Config types ───────────────────────────────────────────────────
 
+export type BreakpointStage = "request" | "response" | "both";
+
+export interface ApiBreakpointRule {
+  pattern: string;
+  stage: BreakpointStage;
+  enabled: boolean;
+}
+
 export interface AppConfig {
   sse_patterns: string[];
+  api_breakpoint_patterns: ApiBreakpointRule[];
   relay_host: string;
   relay_port: number;
   proxy_address: string;

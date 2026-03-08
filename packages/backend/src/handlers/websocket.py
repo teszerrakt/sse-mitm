@@ -9,8 +9,10 @@ from aiohttp import web
 from pydantic import TypeAdapter
 
 from src.models import (
-    ClientCmd,
+    AbortRequestCmd,
     ClearSessionsCmd,
+    ClearTrafficCmd,
+    ClientCmd,
     CloseSessionCmd,
     DelayCmd,
     DropCmd,
@@ -18,11 +20,15 @@ from src.models import (
     ForwardAllCmd,
     ForwardCmd,
     InjectCmd,
+    ResumeRequestCmd,
+    ResumeResponseCmd,
     SaveSessionCmd,
     SessionUpdatedMsg,
     SessionsClearedMsg,
+    TrafficClearedMsg,
 )
 from src.session_manager import SessionManager
+from src.traffic_store import TrafficStore
 
 logger = logging.getLogger(__name__)
 
@@ -44,13 +50,19 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     logger.info("WebSocket client connected (total: %d)", len(ws_clients))
 
     session_manager: SessionManager = request.app["session_manager"]
+    traffic_store: TrafficStore = request.app["traffic_store"]
     mocks_dir = request.app["mocks_dir"]
 
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 await _handle_command(
-                    msg.data, session_manager, ws, mocks_dir, ws_clients
+                    msg.data,
+                    session_manager,
+                    ws,
+                    mocks_dir,
+                    ws_clients,
+                    traffic_store,
                 )
             elif msg.type in (
                 aiohttp.WSMsgType.ERROR,
@@ -70,6 +82,7 @@ async def _handle_command(
     ws: web.WebSocketResponse,
     mocks_dir: Any,
     ws_clients: set[web.WebSocketResponse],
+    traffic_store: TrafficStore,
 ) -> None:
     try:
         data = json.loads(raw)
@@ -93,6 +106,69 @@ async def _handle_command(
         for client in dead:
             ws_clients.discard(client)
         return
+
+    # --- Traffic commands (no session_id) ---
+
+    if isinstance(cmd, ClearTrafficCmd):
+        traffic_store.clear_all()
+        cleared_msg = TrafficClearedMsg(type="traffic_cleared")
+        msg_str = cleared_msg.model_dump_json()
+        dead = []
+        for client in ws_clients:
+            try:
+                await client.send_str(msg_str)
+            except Exception:
+                dead.append(client)
+        for client in dead:
+            ws_clients.discard(client)
+        return
+
+    if isinstance(cmd, ResumeRequestCmd):
+        decision = traffic_store.get_decision(cmd.traffic_id)
+        if decision is None:
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": f"No pending intercept for traffic '{cmd.traffic_id}'",
+                    }
+                )
+            )
+            return
+        decision.resume_request(cmd.modifications)
+        return
+
+    if isinstance(cmd, ResumeResponseCmd):
+        decision = traffic_store.get_decision(cmd.traffic_id)
+        if decision is None:
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": f"No pending intercept for traffic '{cmd.traffic_id}'",
+                    }
+                )
+            )
+            return
+        decision.resume_response(cmd.modifications)
+        return
+
+    if isinstance(cmd, AbortRequestCmd):
+        decision = traffic_store.get_decision(cmd.traffic_id)
+        if decision is None:
+            await ws.send_str(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": f"No pending intercept for traffic '{cmd.traffic_id}'",
+                    }
+                )
+            )
+            return
+        decision.abort()
+        return
+
+    # --- SSE session commands ---
 
     try:
         session = session_manager.get_or_raise(cmd.session_id)
