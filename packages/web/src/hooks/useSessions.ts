@@ -9,7 +9,7 @@ import type {
   ClientCmd,
   SSEEvent,
 } from "../types";
-import { useWebSocket } from "./useWebSocket";
+import { useSharedWebSocket } from "./useWebSocket";
 
 export function useSessions() {
   const [sessions, setSessions] = useState<Record<string, SessionState>>({});
@@ -109,7 +109,7 @@ export function useSessions() {
     });
   }, []);
 
-  const { send } = useWebSocket(handleMessage);
+  const { send } = useSharedWebSocket(handleMessage);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 

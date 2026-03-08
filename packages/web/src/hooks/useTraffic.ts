@@ -7,7 +7,7 @@ import type {
   RequestModification,
   ResponseModification,
 } from "../types";
-import { useWebSocket } from "./useWebSocket";
+import { useSharedWebSocket } from "./useWebSocket";
 
 export function useTraffic() {
   const [entries, setEntries] = useState<TrafficEntry[]>([]);
@@ -48,7 +48,7 @@ export function useTraffic() {
     }
   }, []);
 
-  const { send } = useWebSocket(handleMessage);
+  const { send } = useSharedWebSocket(handleMessage);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 

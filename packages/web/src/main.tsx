@@ -4,12 +4,15 @@ import "./index.css";
 import App from "./App";
 import { ConfigProvider } from "./hooks/useConfig";
 import { CertStatusProvider } from "./hooks/useCertStatus";
+import { WebSocketProvider } from "./hooks/useWebSocket";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ConfigProvider>
       <CertStatusProvider>
-        <App />
+        <WebSocketProvider>
+          <App />
+        </WebSocketProvider>
       </CertStatusProvider>
     </ConfigProvider>
   </StrictMode>,
