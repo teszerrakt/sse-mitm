@@ -280,6 +280,11 @@ export function NetworkTab({
                         <div className="text-muted-foreground text-xs mt-0.5">
                           {s.info.event_count} events
                         </div>
+                        {s.info.status === "error" && s.info.error_message && (
+                          <div className="text-danger text-xs mt-0.5 truncate" title={s.info.error_message}>
+                            {s.info.error_message}
+                          </div>
+                        )}
                       </button>
                     );
                   })}

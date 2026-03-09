@@ -65,6 +65,11 @@ export function SessionDetail({
             {session.info.pending_count} pending
           </span>
         )}
+        {session.info.status === "error" && session.info.error_message && (
+          <span className="text-danger text-xs truncate max-w-xs" title={session.info.error_message}>
+            {session.info.error_message}
+          </span>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           <AutoForwardToggle autoForward={autoForward} onChange={handleAutoForwardChange} />

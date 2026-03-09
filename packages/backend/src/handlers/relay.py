@@ -190,14 +190,15 @@ async def _read_upstream(
     async def on_error(exc: Exception) -> None:
         logger.error("Session %s upstream error: %s", session.id, exc)
         await session.signal_upstream_done()
+        error_message = str(exc)
         await ws_broadcaster(
             ErrorMsg(
                 type="error",
                 session_id=session.id,
-                message=str(exc),
+                message=error_message,
             ).model_dump_json()
         )
-        await session.fail_stream()
+        await session.fail_stream(error_message)
 
     await stream_upstream_sse(
         client_session=http_client,

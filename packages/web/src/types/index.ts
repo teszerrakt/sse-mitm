@@ -102,6 +102,7 @@ export interface SessionInfo {
   created_at: number;
   event_count: number;
   pending_count: number;
+  error_message: string | null;
 }
 
 // ── WebSocket Server → UI messages ───────────────────────────────────────────

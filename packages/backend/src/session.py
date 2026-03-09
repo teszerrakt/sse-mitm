@@ -55,6 +55,9 @@ class Session:
         # Set when upstream signals EOF; we close the stream once pending is empty
         self._upstream_done: bool = False
 
+        # Error message stored when fail_stream is called
+        self._error_message: str | None = None
+
     # ------------------------------------------------------------------
     # Upstream side
     # ------------------------------------------------------------------
@@ -159,11 +162,12 @@ class Session:
         self.status = SessionStatus.COMPLETED
         await self._approved.put(None)
 
-    async def fail_stream(self) -> None:
+    async def fail_stream(self, error_message: str | None = None) -> None:
         """Close the stream due to an upstream error."""
         if self.status in (SessionStatus.COMPLETED, SessionStatus.ERROR):
             return
         self.status = SessionStatus.ERROR
+        self._error_message = error_message
         await self._approved.put(None)
 
     # ------------------------------------------------------------------
@@ -205,6 +209,7 @@ class Session:
             created_at=self.created_at,
             event_count=len(self._history),
             pending_count=len(self._pending_events),
+            error_message=self._error_message,
         )
 
     def to_mock_config(self, name: str) -> MockConfig:
