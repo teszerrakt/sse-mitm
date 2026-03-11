@@ -322,6 +322,16 @@ class SSEInterceptorAddon:
             },
         )
 
+        # 4. Borrow-cookie — capture rich cookie headers from passing traffic
+        #    so the relay can reuse them for SSE upstream requests that only
+        #    carry thin cookies (e.g. _dd_s from PR preview environments).
+        cookie = "; ".join(flow.request.headers.get_all("cookie"))
+        if cookie and cookie.count(";") >= 2:
+            self._post_to_relay_async(
+                "/cookies/store",
+                {"url": url, "cookies": cookie},
+            )
+
     async def response(self, flow: http.HTTPFlow) -> None:
         """
         Called when a complete HTTP response has been received.

@@ -12,6 +12,7 @@ import certifi
 from aiohttp import web
 from aiohttp.typedefs import Handler
 
+from src.cookie_jar import CookieJar
 from src.handlers.cert import (
     get_cert_download_handler,
     get_cert_status_handler,
@@ -19,6 +20,11 @@ from src.handlers.cert import (
     post_tls_error_handler,
 )
 from src.handlers.config import get_config_handler, put_config_handler
+from src.handlers.cookies import (
+    cookie_clear_handler,
+    cookie_list_handler,
+    cookie_store_handler,
+)
 from src.handlers.ingest import (
     ingest_chunk_handler,
     ingest_drain_handler,
@@ -82,7 +88,7 @@ async def _ws_broadcaster(app: web.Application):
 
     async def broadcast(message: str) -> None:
         dead: list[web.WebSocketResponse] = []
-        for ws in app["ws_clients"]:
+        for ws in list(app["ws_clients"]):
             try:
                 await asyncio.wait_for(ws.send_str(message), timeout=5.0)
             except Exception:
@@ -133,6 +139,7 @@ def create_app(
     app["mocks_dir"] = mocks_dir
     app["auto_forward_default"] = auto_forward
     app["config_file"] = config_file or _DEFAULT_CONFIG_FILE
+    app["cookie_jar"] = CookieJar()
 
     # Routes
     app.router.add_post("/relay", relay_handler)
@@ -150,6 +157,11 @@ def create_app(
     app.router.add_get("/cert/status", get_cert_status_handler)
     app.router.add_post("/cert/install", post_cert_install_handler)
     app.router.add_post("/tls-error", post_tls_error_handler)
+
+    # Cookie jar routes (borrow-cookie for SSE auth)
+    app.router.add_post("/cookies/store", cookie_store_handler)
+    app.router.add_get("/cookies", cookie_list_handler)
+    app.router.add_delete("/cookies", cookie_clear_handler)
 
     # HTTP traffic routes
     app.router.add_post("/traffic/log", traffic_log_handler)

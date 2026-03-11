@@ -15,6 +15,7 @@ from src.models import (
 )
 from src.session import Session
 from src.session_manager import SessionManager
+from src.cookie_jar import CookieJar
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +58,55 @@ def _format_sse(event: SSEEvent) -> bytes:
     return "\n".join(parts).encode("utf-8")
 
 
+def _count_cookies(cookie_header: str) -> int:
+    """Count key=value pairs in a Cookie header string."""
+    return len([c for c in cookie_header.split(";") if "=" in c])
+
+
+def _enrich_cookies(req_info: RequestInfo, cookie_jar: CookieJar | None) -> RequestInfo:
+    """Replace a thin Cookie header with a richer one from the jar.
+
+    If the current request has ≤2 cookies and the jar has a richer
+    cookie string for the same domain, swap it in.  Returns a new
+    ``RequestInfo`` (frozen model) with updated headers.
+    """
+    if cookie_jar is None:
+        return req_info
+
+    jar_cookies = cookie_jar.get(req_info.url)
+    if jar_cookies is None:
+        return req_info
+
+    current_cookie = req_info.headers.get("cookie", "")
+    if _count_cookies(current_cookie) > 2:
+        # Already rich enough — don't overwrite
+        return req_info
+
+    logger.info(
+        "Borrowing cookies for %s (had %d, jar has %d)",
+        req_info.url,
+        _count_cookies(current_cookie),
+        _count_cookies(jar_cookies),
+    )
+    enriched_headers = {**req_info.headers, "cookie": jar_cookies}
+    return RequestInfo(
+        url=req_info.url,
+        method=req_info.method,
+        headers=enriched_headers,
+        body=req_info.body,
+        client_ip=req_info.client_ip,
+        user_agent=req_info.user_agent,
+    )
+
+
 def _build_request_info(request: web.Request) -> RequestInfo:
     target_url = request.query.get("target", "")
     original_method = request.query.get("method", request.method)
     client_ip = request.headers.get("x-original-client-ip") or request.remote
     user_agent = request.headers.get("user-agent")
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP_BY_HOP}
+    headers = {
+        k.lower(): v for k, v in request.headers.items() if k.lower() not in _HOP_BY_HOP
+    }
     return RequestInfo(
         url=target_url,
         method=original_method,
@@ -127,6 +171,9 @@ async def relay_handler(request: web.Request) -> web.StreamResponse:
 
         if not req_info.url:
             raise web.HTTPBadRequest(reason="Missing 'target' query parameter")
+
+        # Borrow-cookie: enrich thin cookies from the jar
+        req_info = _enrich_cookies(req_info, request.app.get("cookie_jar"))
 
         session = Session(req_info)
         if auto_forward_default:
