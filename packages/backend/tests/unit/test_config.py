@@ -12,7 +12,10 @@ class TestReadConfig:
     def test_returns_defaults_when_no_file(self, tmp_path: Path) -> None:
         missing = tmp_path / "config.json"
         config = _read_config(missing)
-        assert config["sse_patterns"] == ["*/sse*", "*/stream*"]
+        assert config["sse_patterns"] == [
+            {"pattern": "*/sse*", "borrow_cookies": True},
+            {"pattern": "*/stream*", "borrow_cookies": True},
+        ]
         assert config["relay_host"] == "127.0.0.1"
         assert config["relay_port"] == 29000
 
@@ -20,7 +23,9 @@ class TestReadConfig:
         cfg = tmp_path / "config.json"
         cfg.write_text(json.dumps({"sse_patterns": ["*/events*"], "relay_port": 9999}))
         config = _read_config(cfg)
-        assert config["sse_patterns"] == ["*/events*"]
+        assert config["sse_patterns"] == [
+            {"pattern": "*/events*", "borrow_cookies": True},
+        ]
         assert config["relay_port"] == 9999
         # default relay_host preserved
         assert config["relay_host"] == "127.0.0.1"
@@ -30,7 +35,10 @@ class TestReadConfig:
         cfg.write_text("{invalid json")
         config = _read_config(cfg)
         assert config == {
-            "sse_patterns": ["*/sse*", "*/stream*"],
+            "sse_patterns": [
+                {"pattern": "*/sse*", "borrow_cookies": True},
+                {"pattern": "*/stream*", "borrow_cookies": True},
+            ],
             "api_breakpoint_patterns": [],
             "relay_host": "127.0.0.1",
             "relay_port": 29000,

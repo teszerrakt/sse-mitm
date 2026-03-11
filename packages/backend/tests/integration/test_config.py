@@ -29,7 +29,10 @@ class TestGetConfig:
         resp = await client.get("/config")
         assert resp.status == 200
         data = await resp.json()
-        assert data["sse_patterns"] == ["*/sse*", "*/stream*"]
+        assert data["sse_patterns"] == [
+            {"pattern": "*/sse*", "borrow_cookies": True},
+            {"pattern": "*/stream*", "borrow_cookies": True},
+        ]
 
     @pytest.mark.asyncio
     async def test_reads_custom_patterns_from_disk(
@@ -40,7 +43,9 @@ class TestGetConfig:
         client.app["config_file"] = cfg
         resp = await client.get("/config")
         data = await resp.json()
-        assert data["sse_patterns"] == ["*/custom*"]
+        assert data["sse_patterns"] == [
+            {"pattern": "*/custom*", "borrow_cookies": True},
+        ]
 
 
 class TestPutConfig:
@@ -57,10 +62,14 @@ class TestPutConfig:
         )
         assert resp.status == 200
         data = await resp.json()
-        assert data["sse_patterns"] == ["*/new-pattern*"]
+        assert data["sse_patterns"] == [
+            {"pattern": "*/new-pattern*", "borrow_cookies": True},
+        ]
         # Verify persisted to disk
         on_disk = json.loads(tmp_config.read_text())
-        assert on_disk["sse_patterns"] == ["*/new-pattern*"]
+        assert on_disk["sse_patterns"] == [
+            {"pattern": "*/new-pattern*", "borrow_cookies": True},
+        ]
 
     @pytest.mark.asyncio
     async def test_put_response_includes_proxy_address(
@@ -103,7 +112,9 @@ class TestPutConfig:
         resp = await client.put("/config", json={"sse_patterns": [123, 456]})
         assert resp.status == 400
         data = await resp.json()
-        assert "must be strings" in data["error"]
+        assert (
+            "must be strings" in data["error"] or "must have a string" in data["error"]
+        )
 
     @pytest.mark.asyncio
     async def test_rejects_invalid_json_body(self, client: TestClient) -> None:
@@ -127,4 +138,7 @@ class TestPutConfig:
         get_resp = await client.get("/config")
         assert get_resp.status == 200
         data = await get_resp.json()
-        assert data["sse_patterns"] == new_patterns
+        assert data["sse_patterns"] == [
+            {"pattern": "*/roundtrip-a*", "borrow_cookies": True},
+            {"pattern": "*/roundtrip-b*", "borrow_cookies": True},
+        ]

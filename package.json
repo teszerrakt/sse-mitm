@@ -49,6 +49,7 @@
     "build:demo": "bun --cwd packages/demo build",
     "lint:demo": "bun --cwd packages/demo lint",
     "fmt:demo": "bun --cwd packages/demo fmt",
-    "typecheck:demo": "bun --cwd packages/demo tsc -b"
+    "typecheck:demo": "bun --cwd packages/demo tsc -b",
+    "bump": "./scripts/bump_version.sh"
   }
 }

@@ -102,6 +102,7 @@ export interface SessionInfo {
   created_at: number;
   event_count: number;
   pending_count: number;
+  error_message: string | null;
 }
 
 // ── WebSocket Server → UI messages ───────────────────────────────────────────
@@ -287,8 +288,13 @@ export interface ApiBreakpointRule {
   enabled: boolean;
 }
 
+export interface SsePatternRule {
+  pattern: string;
+  borrow_cookies: boolean;
+}
+
 export interface AppConfig {
-  sse_patterns: string[];
+  sse_patterns: SsePatternRule[];
   api_breakpoint_patterns: ApiBreakpointRule[];
   relay_host: string;
   relay_port: number;

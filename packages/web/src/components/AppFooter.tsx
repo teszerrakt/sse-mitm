@@ -29,7 +29,7 @@ export function AppFooter({ children }: AppFooterProps) {
   return (
     <div
       onMouseDown={handleMouseDown}
-      className="flex items-center gap-3 px-3 py-2 border-t border-border bg-panel shrink-0 select-none"
+      className="flex items-center gap-3 px-3 h-8 border-t border-border bg-panel shrink-0 select-none"
     >
       {children}
     </div>

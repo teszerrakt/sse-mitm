@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+
 import logging
 
 import aiohttp
@@ -15,6 +16,7 @@ from src.models import (
 )
 from src.session import Session
 from src.session_manager import SessionManager
+from src.cookie_jar import CookieJar
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +59,55 @@ def _format_sse(event: SSEEvent) -> bytes:
     return "\n".join(parts).encode("utf-8")
 
 
+def _count_cookies(cookie_header: str) -> int:
+    """Count key=value pairs in a Cookie header string."""
+    return len([c for c in cookie_header.split(";") if "=" in c])
+
+
+def _enrich_cookies(req_info: RequestInfo, cookie_jar: CookieJar | None) -> RequestInfo:
+    """Replace a thin Cookie header with a richer one from the jar.
+
+    If the current request has ≤2 cookies and the jar has a richer
+    cookie string for the same domain, swap it in.  Returns a new
+    ``RequestInfo`` (frozen model) with updated headers.
+    """
+    if cookie_jar is None:
+        return req_info
+
+    jar_cookies = cookie_jar.get(req_info.url)
+    if jar_cookies is None:
+        return req_info
+
+    current_cookie = req_info.headers.get("cookie", "")
+    if _count_cookies(current_cookie) > 2:
+        # Already rich enough — don't overwrite
+        return req_info
+
+    logger.info(
+        "Borrowing cookies for %s (had %d, jar has %d)",
+        req_info.url,
+        _count_cookies(current_cookie),
+        _count_cookies(jar_cookies),
+    )
+    enriched_headers = {**req_info.headers, "cookie": jar_cookies}
+    return RequestInfo(
+        url=req_info.url,
+        method=req_info.method,
+        headers=enriched_headers,
+        body=req_info.body,
+        client_ip=req_info.client_ip,
+        user_agent=req_info.user_agent,
+    )
+
+
 def _build_request_info(request: web.Request) -> RequestInfo:
     target_url = request.query.get("target", "")
     original_method = request.query.get("method", request.method)
     client_ip = request.headers.get("x-original-client-ip") or request.remote
     user_agent = request.headers.get("user-agent")
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP_BY_HOP}
+    headers = {
+        k.lower(): v for k, v in request.headers.items() if k.lower() not in _HOP_BY_HOP
+    }
     return RequestInfo(
         url=target_url,
         method=original_method,
@@ -82,47 +127,77 @@ async def relay_handler(request: web.Request) -> web.StreamResponse:
     3. Start background task: stream upstream SSE → session pending queue.
     4. Start background task: pump pending events through User controls.
     5. Stream approved events back to the client as SSE.
+
+    When the addon provides a ``session_id`` query parameter, the session
+    was already created by ``/ingest/start`` and upstream chunks are fed
+    by the addon via ``/ingest/chunk``.  In that case we skip step 3
+    (no ``_read_upstream`` task) because the addon handles upstream fetching.
     """
     session_manager: SessionManager = request.app["session_manager"]
     ws_broadcaster = request.app["ws_broadcaster"]
     http_client: aiohttp.ClientSession = request.app["http_client"]
     auto_forward_default: bool = request.app.get("auto_forward_default", False)
 
-    # Read original request body
-    body_bytes = await request.read()
-    body = body_bytes.decode("utf-8") if body_bytes else None
+    # Check if this is an addon-fed ingest session
+    session_id = request.query.get("session_id")
+    ingest_mode = False
 
-    req_info = _build_request_info(request)
-    req_info = RequestInfo(
-        url=req_info.url,
-        method=req_info.method,
-        headers=req_info.headers,
-        body=body,
-        client_ip=req_info.client_ip,
-        user_agent=req_info.user_agent,
-    )
+    if session_id:
+        # Look up pre-created session from /ingest/start
+        session = session_manager.get(session_id)
+        if session is None:
+            raise web.HTTPNotFound(
+                reason=f"Session {session_id} not found (was /ingest/start called?)"
+            )
+        ingest_mode = True
+        logger.info(
+            "Relay handler attached to ingest session %s → %s",
+            session.id,
+            session.request.url,
+        )
+    else:
+        # Original behavior: create session and fetch upstream ourselves
+        body_bytes = await request.read()
+        body = body_bytes.decode("utf-8") if body_bytes else None
 
-    if not req_info.url:
-        raise web.HTTPBadRequest(reason="Missing 'target' query parameter")
+        req_info = _build_request_info(request)
+        req_info = RequestInfo(
+            url=req_info.url,
+            method=req_info.method,
+            headers=req_info.headers,
+            body=body,
+            client_ip=req_info.client_ip,
+            user_agent=req_info.user_agent,
+        )
 
-    session = Session(req_info)
-    if auto_forward_default:
-        session.enable_auto_forward()
+        if not req_info.url:
+            raise web.HTTPBadRequest(reason="Missing 'target' query parameter")
 
-    session_manager.create(session)
-    logger.info("New session %s → %s", session.id, req_info.url)
+        # Borrow-cookie: enrich thin cookies from the jar (per-SSE-rule flag)
+        borrow_cookies = request.query.get("borrow_cookies", "1") == "1"
+        if borrow_cookies:
+            req_info = _enrich_cookies(req_info, request.app.get("cookie_jar"))
 
-    # Notify UI
-    await ws_broadcaster(
-        NewSessionMsg(
-            type="new_session", session=session.to_session_info()
-        ).model_dump_json()
-    )
+        session = Session(req_info)
+        if auto_forward_default:
+            session.enable_auto_forward()
 
-    # Background: read upstream SSE
-    upstream_task = asyncio.create_task(
-        _read_upstream(session, http_client, req_info, ws_broadcaster)
-    )
+        session_manager.create(session)
+        logger.info("New session %s → %s", session.id, req_info.url)
+
+        # Notify UI
+        await ws_broadcaster(
+            NewSessionMsg(
+                type="new_session", session=session.to_session_info()
+            ).model_dump_json()
+        )
+
+    # Background: read upstream SSE (only when NOT in ingest mode)
+    upstream_task: asyncio.Task[None] | None = None
+    if not ingest_mode:
+        upstream_task = asyncio.create_task(
+            _read_upstream(session, http_client, req_info, ws_broadcaster)
+        )
 
     # Prepare streaming response to client
     response = web.StreamResponse(status=200, headers=_SSE_HEADERS)
@@ -149,7 +224,8 @@ async def relay_handler(request: web.Request) -> web.StreamResponse:
         logger.info("Session %s: client disconnected", session.id)
     finally:
         heartbeat_task.cancel()
-        upstream_task.cancel()
+        if upstream_task is not None:
+            upstream_task.cancel()
         await session.close_stream()
         await ws_broadcaster(
             StreamEndMsg(type="stream_end", session_id=session.id).model_dump_json()
@@ -190,14 +266,15 @@ async def _read_upstream(
     async def on_error(exc: Exception) -> None:
         logger.error("Session %s upstream error: %s", session.id, exc)
         await session.signal_upstream_done()
+        error_message = str(exc)
         await ws_broadcaster(
             ErrorMsg(
                 type="error",
                 session_id=session.id,
-                message=str(exc),
+                message=error_message,
             ).model_dump_json()
         )
-        await session.fail_stream()
+        await session.fail_stream(error_message)
 
     await stream_upstream_sse(
         client_session=http_client,

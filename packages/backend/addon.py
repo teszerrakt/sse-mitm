@@ -41,6 +41,24 @@ _MAX_BODY_CAPTURE = 512 * 1024  # 512 KB
 _VALID_STAGES = {"request", "response", "both"}
 
 
+def _normalize_sse_patterns(raw: list[Any]) -> list[dict[str, str | bool]]:
+    """Normalize sse_patterns from config.
+
+    Accepts both legacy bare strings and ``{"pattern": ..., "borrow_cookies": ...}``
+    objects.  Bare strings are promoted to ``{"pattern": <str>, "borrow_cookies": True}``.
+    """
+    result: list[dict[str, str | bool]] = []
+    for item in raw:
+        if isinstance(item, str):
+            result.append({"pattern": item, "borrow_cookies": True})
+        elif isinstance(item, dict) and "pattern" in item:
+            borrow = item.get("borrow_cookies", True)
+            if not isinstance(borrow, bool):
+                borrow = True
+            result.append({"pattern": item["pattern"], "borrow_cookies": borrow})
+    return result
+
+
 def _normalize_breakpoint_rules(raw: list[Any]) -> list[dict[str, str | bool]]:
     """Normalize api_breakpoint_patterns from config.
 
@@ -188,18 +206,20 @@ class SSEInterceptorAddon:
         config = _load_config(self._config_file)
         self._relay_host: str = relay_host or config["relay_host"]
         self._relay_port: int = relay_port or int(config["relay_port"])
-        self._patterns: list[str] = list(config["sse_patterns"])
+        self._sse_rules: list[dict[str, str | bool]] = _normalize_sse_patterns(
+            config.get("sse_patterns", [])
+        )
         self._api_breakpoint_rules: list[dict[str, str | bool]] = (
             _normalize_breakpoint_rules(config.get("api_breakpoint_patterns", []))
         )
         self._config_mtime: float = self._get_config_mtime()
         self._last_tls_error_at: dict[tuple[str, str | None], float] = {}
         logger.info(
-            "SSE interceptor ready — relay at %s:%d, sse_patterns: %s, "
+            "SSE interceptor ready — relay at %s:%d, sse_rules: %s, "
             "api_breakpoint_rules: %s",
             self._relay_host,
             self._relay_port,
-            self._patterns,
+            self._sse_rules,
             self._api_breakpoint_rules,
         )
 
@@ -220,16 +240,16 @@ class SSEInterceptorAddon:
             config = _load_config(self._config_file)
             self._relay_host = config["relay_host"]
             self._relay_port = int(config["relay_port"])
-            self._patterns = list(config["sse_patterns"])
+            self._sse_rules = _normalize_sse_patterns(config.get("sse_patterns", []))
             self._api_breakpoint_rules = _normalize_breakpoint_rules(
                 config.get("api_breakpoint_patterns", [])
             )
             logger.info(
-                "Config reloaded — relay at %s:%d, sse_patterns: %s, "
+                "Config reloaded — relay at %s:%d, sse_rules: %s, "
                 "api_breakpoint_rules: %s",
                 self._relay_host,
                 self._relay_port,
-                self._patterns,
+                self._sse_rules,
                 self._api_breakpoint_rules,
             )
 
@@ -237,8 +257,12 @@ class SSEInterceptorAddon:
     # Pattern matching
     # ------------------------------------------------------------------
 
-    def _is_sse_request(self, url: str) -> bool:
-        return any(fnmatch(url, p) for p in self._patterns)
+    def _match_sse_rule(self, url: str) -> dict[str, str | bool] | None:
+        """Return the first matching SSE rule, or None."""
+        for rule in self._sse_rules:
+            if fnmatch(url, str(rule["pattern"])):
+                return rule
+        return None
 
     def _match_api_breakpoint(self, url: str) -> dict[str, str | bool] | None:
         """Return the first matching *enabled* breakpoint rule, or None."""
@@ -281,8 +305,10 @@ class SSEInterceptorAddon:
         url = flow.request.pretty_url
 
         # 1. SSE interception (existing behavior — unchanged)
-        if self._is_sse_request(url):
-            self._rewrite_to_relay(flow, url)
+        sse_rule = self._match_sse_rule(url)
+        if sse_rule is not None:
+            borrow_cookies = bool(sse_rule.get("borrow_cookies", True))
+            self._rewrite_to_relay(flow, url, borrow_cookies=borrow_cookies)
             return
 
         # 2. API breakpoint — block until user acts (runs in thread pool
@@ -321,6 +347,16 @@ class SSEInterceptorAddon:
                 "request": req_data,
             },
         )
+
+        # 4. Borrow-cookie — capture rich cookie headers from passing traffic
+        #    so the relay can reuse them for SSE upstream requests that only
+        #    carry thin cookies (e.g. _dd_s from PR preview environments).
+        cookie = "; ".join(flow.request.headers.get_all("cookie"))
+        if cookie and cookie.count(";") >= 2:
+            self._post_to_relay_async(
+                "/cookies/store",
+                {"url": url, "cookies": cookie},
+            )
 
     async def response(self, flow: http.HTTPFlow) -> None:
         """
@@ -429,18 +465,27 @@ class SSEInterceptorAddon:
     # SSE rewrite (existing behavior, extracted for clarity)
     # ------------------------------------------------------------------
 
-    def _rewrite_to_relay(self, flow: http.HTTPFlow, url: str) -> None:
+    def _rewrite_to_relay(
+        self,
+        flow: http.HTTPFlow,
+        url: str,
+        *,
+        borrow_cookies: bool = True,
+    ) -> None:
         """Rewrite an SSE request to point at the relay server's /relay."""
         logger.info("Intercepting SSE request: %s", url)
 
         original_url = url
+        bc_flag = "1" if borrow_cookies else "0"
 
         flow.request.host = self._relay_host
         flow.request.port = self._relay_port
         flow.request.scheme = "http"
 
         flow.request.path = (
-            f"/relay?target={_url_encode(original_url)}&method={flow.request.method}"
+            f"/relay?target={_url_encode(original_url)}"
+            f"&method={flow.request.method}"
+            f"&borrow_cookies={bc_flag}"
         )
         flow.request.method = "POST"
         flow.request.http_version = "HTTP/1.1"
@@ -525,3 +570,7 @@ def _url_encode(url: str) -> str:
     from urllib.parse import quote
 
     return quote(url, safe="")
+
+
+# mitmproxy --scripts discovery: must be a module-level list
+addons = [SSEInterceptorAddon()]

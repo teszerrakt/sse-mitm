@@ -20,8 +20,33 @@ from src.models import (
     SessionStatus,
     SSEEvent,
 )
+from src.sse_parser import SSEParser
 
 logger = logging.getLogger(__name__)
+
+
+def _format_sse_bytes(event: SSEEvent) -> bytes:
+    """Serialize an SSEEvent back to raw SSE wire format bytes.
+
+    Produces the standard ``text/event-stream`` encoding::
+
+        event: <event>\\n
+        data: <data>\\n
+        id: <id>\\n       (if present)
+        \\n
+    """
+    parts: list[str] = []
+    if event.event:
+        parts.append(f"event: {event.event}")
+    if event.data:
+        for line in event.data.split("\n"):
+            parts.append(f"data: {line}")
+    if event.id:
+        parts.append(f"id: {event.id}")
+    if event.retry is not None:
+        parts.append(f"retry: {event.retry}")
+    parts.append("")  # trailing blank line to terminate event
+    return ("\n".join(parts) + "\n").encode("utf-8")
 
 
 class Session:
@@ -54,6 +79,12 @@ class Session:
 
         # Set when upstream signals EOF; we close the stream once pending is empty
         self._upstream_done: bool = False
+
+        # Error message stored when fail_stream is called
+        self._error_message: str | None = None
+
+        # SSE parser for addon-fed ingest mode
+        self._ingest_parser: SSEParser | None = None
 
     # ------------------------------------------------------------------
     # Upstream side
@@ -91,6 +122,26 @@ class Session:
         # If there are no pending events waiting for User action, close immediately
         if not self._pending_events:
             await self.close_stream()
+
+    # ------------------------------------------------------------------
+    # Addon-fed ingest
+    # ------------------------------------------------------------------
+
+    def feed_chunk(self, chunk: bytes) -> list[SSEEvent]:
+        """Parse raw upstream bytes into SSE events (addon-fed ingest mode).
+
+        Returns the list of parsed events so the caller can broadcast them.
+        Events are enqueued via ``enqueue_upstream_event()`` by the caller.
+        """
+        if self._ingest_parser is None:
+            self._ingest_parser = SSEParser()
+        return self._ingest_parser.feed(chunk)
+
+    def flush_ingest_parser(self) -> SSEEvent | None:
+        """Flush any partial event remaining in the ingest parser buffer."""
+        if self._ingest_parser is not None:
+            return self._ingest_parser.flush()
+        return None
 
     # ------------------------------------------------------------------
     # User control side (called by WebSocket handler)
@@ -159,15 +210,16 @@ class Session:
         self.status = SessionStatus.COMPLETED
         await self._approved.put(None)
 
-    async def fail_stream(self) -> None:
+    async def fail_stream(self, error_message: str | None = None) -> None:
         """Close the stream due to an upstream error."""
         if self.status in (SessionStatus.COMPLETED, SessionStatus.ERROR):
             return
         self.status = SessionStatus.ERROR
+        self._error_message = error_message
         await self._approved.put(None)
 
     # ------------------------------------------------------------------
-    # Client side (relay handler)
+    # Client side (relay handler / stream tap drain)
     # ------------------------------------------------------------------
 
     async def approved_events(self) -> AsyncIterator[SSEEvent]:
@@ -176,6 +228,38 @@ class Session:
             if event is None:
                 return
             yield event
+
+    async def drain_approved_bytes(self, timeout: float = 30.0) -> bytes | None:
+        """Block until at least one approved event is ready, then return SSE wire bytes.
+
+        Used by the addon stream-tap mode: the mitmproxy ``response.stream``
+        callback calls ``/ingest/drain`` which ends up here.  We wait for the
+        breakpoint queue to produce approved events, format them as raw SSE
+        wire bytes, and return them so the tap function can feed them back to
+        the browser.
+
+        Returns ``None`` when the stream has ended (sentinel received).
+        Returns ``b""`` on timeout (no events approved within the window).
+        """
+        result = bytearray()
+        try:
+            event = await asyncio.wait_for(self._approved.get(), timeout=timeout)
+            if event is None:
+                return None  # stream ended
+            result.extend(_format_sse_bytes(event))
+
+            # Greedily drain any additional immediately-available events
+            while not self._approved.empty():
+                event = self._approved.get_nowait()
+                if event is None:
+                    # Put sentinel back so future drains also see it
+                    await self._approved.put(None)
+                    break
+                result.extend(_format_sse_bytes(event))
+        except asyncio.TimeoutError:
+            pass  # Return empty — no events approved yet
+
+        return bytes(result)
 
     # ------------------------------------------------------------------
     # Auto-forward toggle
@@ -205,6 +289,7 @@ class Session:
             created_at=self.created_at,
             event_count=len(self._history),
             pending_count=len(self._pending_events),
+            error_message=self._error_message,
         )
 
     def to_mock_config(self, name: str) -> MockConfig:

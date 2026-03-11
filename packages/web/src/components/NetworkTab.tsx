@@ -28,6 +28,12 @@ interface GroupData {
 
 const UNKNOWN_KEY = "__unknown__";
 
+/** Extract a short label like "401" from an error message like "401, message='Unauthorized', url='...'" */
+function extractStatusCode(message: string): string {
+  const match = /^(\d{3})/.exec(message);
+  return match ? match[1] : "ERR";
+}
+
 function statusDot(status: string) {
   if (status === "active") return "bg-success";
   if (status === "completed") return "bg-dim";
@@ -277,8 +283,15 @@ export function NetworkTab({
                         <div className="text-foreground text-sm truncate font-mono">
                           {shortUrl(s.info.request.url)}
                         </div>
-                        <div className="text-muted-foreground text-xs mt-0.5">
-                          {s.info.event_count} events
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-muted-foreground text-xs">
+                            {s.info.event_count} events
+                          </span>
+                          {s.info.status === "error" && s.info.error_message && (
+                            <Badge variant="danger" className="text-[10px] px-1 py-0">
+                              {extractStatusCode(s.info.error_message)}
+                            </Badge>
+                          )}
                         </div>
                       </button>
                     );

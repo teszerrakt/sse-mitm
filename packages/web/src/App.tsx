@@ -24,11 +24,11 @@ import { Button } from "./components/ui/button";
 import boredOrthrus from "./assets/bored-orthrus.webp";
 
 type View = "inspector" | "settings";
-type Tab = "sse" | "traffic";
+type Tab = "streams" | "intercept";
 
 export default function App() {
   const [view, setView] = useState<View>("inspector");
-  const [tab, setTab] = useState<Tab>("sse");
+  const [tab, setTab] = useState<Tab>("streams");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [splashDone, setSplashDone] = useState(!isTauri());
   const { config, loading: configLoading } = useConfig();
@@ -93,7 +93,7 @@ export default function App() {
   ).length;
 
   const handleClear = () => {
-    if (tab === "sse") {
+    if (tab === "streams") {
       clearSessions();
     } else {
       clearTraffic();
@@ -102,14 +102,14 @@ export default function App() {
   };
 
   const clearLabel =
-    tab === "sse"
-      ? `Clear all ${sessionCount} session(s)?`
-      : `Clear all ${trafficCount} traffic entries?`;
+    tab === "streams"
+      ? `Clear all ${sessionCount} stream(s)?`
+      : `Clear all ${trafficCount} request(s)?`;
 
   const clearTitle =
-    tab === "sse" ? "Clear All Sessions" : "Clear All Traffic";
+    tab === "streams" ? "Clear All Streams" : "Clear All Requests";
 
-  const itemCount = tab === "sse" ? sessionCount : trafficCount;
+  const itemCount = tab === "streams" ? sessionCount : trafficCount;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -134,7 +134,7 @@ export default function App() {
           <span
             className={`text-muted-foreground ${isTauri() ? "text-xs" : "text-sm"}`}
           >
-            {itemCount} {tab === "sse" ? "session" : "request"}
+            {itemCount} {tab === "streams" ? "stream" : "request"}
             {itemCount !== 1 ? "s" : ""}
           </span>
           {itemCount > 0 && (
@@ -165,36 +165,36 @@ export default function App() {
         {/* Left: session/traffic list with tabs */}
         <div className="w-80 shrink-0 overflow-hidden flex flex-col">
           {/* Tab switcher */}
-          <div className="flex border-b border-border bg-panel shrink-0">
+          <div className="flex items-center h-10 border-b border-border bg-panel shrink-0">
             <button
-              onClick={() => setTab("sse")}
+              onClick={() => setTab("streams")}
               className={[
-                "flex-1 px-3 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors relative",
-                tab === "sse"
+                "flex-1 px-3 py-2 text-xs font-medium uppercase tracking-wider transition-colors relative",
+                tab === "streams"
                   ? "text-accent"
                   : "text-muted-foreground hover:text-foreground",
               ].join(" ")}
             >
-              SSE
+              Streams
               {sessionCount > 0 && (
                 <span className="ml-1.5 text-[10px] text-muted-foreground">
                   {sessionCount}
                 </span>
               )}
-              {tab === "sse" && (
+              {tab === "streams" && (
                 <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />
               )}
             </button>
             <button
-              onClick={() => setTab("traffic")}
+              onClick={() => setTab("intercept")}
               className={[
-                "flex-1 px-3 py-1.5 text-xs font-medium uppercase tracking-wider transition-colors relative",
-                tab === "traffic"
+                "flex-1 px-3 py-2 text-xs font-medium uppercase tracking-wider transition-colors relative",
+                tab === "intercept"
                   ? "text-accent"
                   : "text-muted-foreground hover:text-foreground",
               ].join(" ")}
             >
-              HTTP
+              Intercept
               {trafficCount > 0 && (
                 <span className="ml-1.5 text-[10px] text-muted-foreground">
                   {trafficCount}
@@ -205,14 +205,14 @@ export default function App() {
                   {interceptedCount}
                 </span>
               )}
-              {tab === "traffic" && (
+              {tab === "intercept" && (
                 <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full" />
               )}
             </button>
           </div>
 
           {/* Tab content */}
-          {tab === "sse" ? (
+          {tab === "streams" ? (
             <NetworkTab
               sessions={sessions}
               selectedId={selectedId}
@@ -234,8 +234,9 @@ export default function App() {
 
         {/* Right: detail panel */}
         <div className="flex-1 overflow-hidden">
-          {tab === "sse" && selected ? (
+          {tab === "streams" && selected ? (
             <SessionDetail
+              key={selected.info.id}
               session={selected}
               onForward={(idx, ev) => forward(selected.info.id, idx, ev)}
               onEdit={(idx, orig, edited) =>
@@ -250,7 +251,7 @@ export default function App() {
               onSave={(filename) => saveSession(selected.info.id, filename)}
               onClose={() => closeSession(selected.info.id)}
             />
-          ) : tab === "traffic" && selectedTraffic ? (
+          ) : tab === "intercept" && selectedTraffic ? (
             <TrafficDetail
               entry={selectedTraffic}
               onResumeRequest={resumeRequest}
@@ -262,14 +263,14 @@ export default function App() {
               <img src={boredOrthrus} alt="" className="w-56 opacity-50" />
               <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground text-sm">
-                  {tab === "sse"
-                    ? "Select a session to inspect events"
+                  {tab === "streams"
+                    ? "Select a stream to inspect events"
                     : "Select a request to inspect details"}
                 </span>
                 <span className="text-dim text-xs">
-                  {tab === "sse"
-                    ? "Forward, edit, drop, or inject SSE events in real time"
-                    : "View HTTP request/response details, edit intercepted requests"}
+                  {tab === "streams"
+                    ? "Forward, edit, drop, or inject events in real time"
+                    : "Inspect and modify intercepted HTTP requests and responses"}
                 </span>
               </div>
             </div>

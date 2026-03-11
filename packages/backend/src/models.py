@@ -184,6 +184,7 @@ class SessionInfo(BaseModel):
     created_at: float
     event_count: int
     pending_count: int
+    error_message: str | None = None
 
 
 # ---------------------------------------------------------------------------

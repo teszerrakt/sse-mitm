@@ -7,6 +7,13 @@ import { ConfirmModal } from "./ConfirmModal";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./ui/dialog";
 import { X } from "lucide-react";
 
 interface Props {
@@ -21,12 +28,20 @@ interface Props {
   onClose: () => void;
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string, hasError: boolean, onShowError?: () => void) {
   if (status === "active")
     return <Badge variant="success">ACTIVE</Badge>;
   if (status === "completed")
     return <Badge variant="outline">DONE</Badge>;
-  return <Badge variant="danger">ERROR</Badge>;
+  return (
+    <Badge
+      variant="danger"
+      className={hasError ? "cursor-pointer hover:bg-danger/20" : ""}
+      onClick={hasError ? onShowError : undefined}
+    >
+      ERROR
+    </Badge>
+  );
 }
 
 export function SessionDetail({
@@ -44,6 +59,7 @@ export function SessionDetail({
   const [saveFilename, setSaveFilename] = useState("");
   const [showSave, setShowSave] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showError, setShowError] = useState(false);
 
   const isActive = session.info.status === "active";
 
@@ -57,8 +73,12 @@ export function SessionDetail({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-panel shrink-0 flex-wrap">
-        {statusBadge(session.info.status)}
+      <div className="flex items-center gap-2 px-3 h-10 border-b border-border bg-panel shrink-0 flex-wrap">
+        {statusBadge(
+          session.info.status,
+          Boolean(session.info.error_message),
+          () => setShowError(true),
+        )}
         <span className="text-muted-foreground text-xs">{session.info.event_count} events</span>
         {session.info.pending_count > 0 && (
           <span className="text-warning text-xs">
@@ -161,6 +181,19 @@ export function SessionDetail({
           />
         )}
       </div>
+
+      {/* Error detail dialog */}
+      <Dialog open={showError} onOpenChange={setShowError}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-danger">Upstream Error</DialogTitle>
+          </DialogHeader>
+          <pre className="text-sm text-foreground bg-hover rounded p-3 overflow-auto max-h-60 whitespace-pre-wrap break-all">
+            {session.info.error_message}
+          </pre>
+          <DialogFooter showCloseButton />
+        </DialogContent>
+      </Dialog>
 
       {/* Force-close confirmation modal */}
       <ConfirmModal

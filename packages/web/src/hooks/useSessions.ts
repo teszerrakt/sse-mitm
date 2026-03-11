@@ -88,7 +88,7 @@ export function useSessions() {
           if (!s) break;
           next[msg.session_id] = {
             ...s,
-            info: { ...s.info, status: "error" },
+            info: { ...s.info, status: "error", error_message: msg.message },
           };
           break;
         }

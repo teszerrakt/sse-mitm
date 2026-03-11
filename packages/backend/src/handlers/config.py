@@ -17,7 +17,10 @@ _DEFAULT_CONFIG_FILE = (
 _VALID_STAGES = {"request", "response", "both"}
 
 _DEFAULT_CONFIG = {
-    "sse_patterns": ["*/sse*", "*/stream*"],
+    "sse_patterns": [
+        {"pattern": "*/sse*", "borrow_cookies": True},
+        {"pattern": "*/stream*", "borrow_cookies": True},
+    ],
     "api_breakpoint_patterns": [],
     "relay_host": "127.0.0.1",
     "relay_port": 29000,
@@ -34,6 +37,25 @@ def _get_lan_ip() -> str:
         return ip
     except Exception:
         return "127.0.0.1"
+
+
+def _normalize_sse_patterns(raw: list) -> list[dict[str, str | bool]]:
+    """Normalize sse_patterns entries.
+
+    Accepts both legacy bare strings (``"*/sse*"``) and full rule objects
+    (``{"pattern": "*/sse*", "borrow_cookies": true}``).  Bare strings are
+    promoted to ``{"pattern": <str>, "borrow_cookies": True}``.
+    """
+    result: list[dict[str, str | bool]] = []
+    for item in raw:
+        if isinstance(item, str):
+            result.append({"pattern": item, "borrow_cookies": True})
+        elif isinstance(item, dict) and "pattern" in item:
+            borrow = item.get("borrow_cookies", True)
+            if not isinstance(borrow, bool):
+                borrow = True
+            result.append({"pattern": item["pattern"], "borrow_cookies": borrow})
+    return result
 
 
 def _normalize_breakpoint_rules(raw: list) -> list[dict[str, str | bool]]:
@@ -65,7 +87,10 @@ def _read_config(config_file: Path) -> dict:
         try:
             on_disk = json.loads(config_file.read_text())
             merged = {**_DEFAULT_CONFIG, **on_disk}
-            # Normalize legacy string[] api_breakpoint_patterns to object[]
+            # Normalize legacy formats to canonical object arrays
+            merged["sse_patterns"] = _normalize_sse_patterns(
+                merged.get("sse_patterns", [])
+            )
             merged["api_breakpoint_patterns"] = _normalize_breakpoint_rules(
                 merged.get("api_breakpoint_patterns", [])
             )
@@ -115,10 +140,32 @@ async def put_config_handler(request: web.Request) -> web.Response:
             return web.json_response(
                 {"error": "sse_patterns must not be empty"}, status=400
             )
-        if not all(isinstance(p, str) for p in patterns):
-            return web.json_response(
-                {"error": "All sse_patterns must be strings"}, status=400
-            )
+        # Accept both legacy strings and rule objects
+        for item in patterns:
+            if isinstance(item, str):
+                continue  # legacy format — will be normalised on save
+            if isinstance(item, dict):
+                if "pattern" not in item or not isinstance(item["pattern"], str):
+                    return web.json_response(
+                        {
+                            "error": "Each sse_patterns object must have a string 'pattern' field"
+                        },
+                        status=400,
+                    )
+                if "borrow_cookies" in item and not isinstance(
+                    item["borrow_cookies"], bool
+                ):
+                    return web.json_response(
+                        {"error": "The 'borrow_cookies' field must be a boolean"},
+                        status=400,
+                    )
+            else:
+                return web.json_response(
+                    {
+                        "error": "sse_patterns items must be strings or {pattern, borrow_cookies} objects"
+                    },
+                    status=400,
+                )
 
     # Validate api_breakpoint_patterns if present
     if "api_breakpoint_patterns" in body:
@@ -164,7 +211,7 @@ async def put_config_handler(request: web.Request) -> web.Response:
     config_file: Path = request.app["config_file"]
     current = _read_config(config_file)
     if "sse_patterns" in body:
-        current["sse_patterns"] = body["sse_patterns"]
+        current["sse_patterns"] = _normalize_sse_patterns(body["sse_patterns"])
     if "api_breakpoint_patterns" in body:
         # Normalize to canonical object format before saving
         current["api_breakpoint_patterns"] = _normalize_breakpoint_rules(
