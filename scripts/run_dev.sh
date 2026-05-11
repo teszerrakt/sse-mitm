@@ -10,7 +10,7 @@ start_relay
 start_mitmproxy "$@"
 
 echo "[run_dev] Starting Vite dev server"
-(cd "$ORTHRUS_ROOT/packages/web" && bunx --bun vite) &
+(cd "$ORTHRUS_ROOT/packages/web" && npx vite) &
 register_child $!
 
 echo ""
