@@ -33,6 +33,59 @@ bun run dev:web            # relay server + mitmproxy + Vite dev server
 
 Open `http://localhost:5173` in your browser. On your mobile device, set WiFi proxy to `<your-machine-ip>:28080`.
 
+### iOS Device Setup
+
+To intercept HTTPS traffic (including SSE) from an iOS device, you need to install and trust the mitmproxy CA certificate.
+
+#### 1. Find your Mac's IP address
+
+```bash
+ipconfig getifaddr en0
+```
+
+Note the IP (e.g., `192.168.1.100`). Your iOS device must be on the same WiFi network.
+
+#### 2. Serve the certificate
+
+```bash
+cd ~/.mitmproxy && python3 -m http.server 8888
+```
+
+The certificate is auto-generated the first time mitmproxy runs (during `bun run dev:web`).
+
+#### 3. Download the certificate on your iOS device
+
+1. Open **Safari** on your iOS device (must be Safari, not Chrome)
+2. Go to `http://<your-mac-ip>:8888/mitmproxy-ca-cert.pem`
+3. Tap **Allow** when prompted to download the configuration profile
+
+#### 4. Install the profile
+
+1. Open **Settings > General > VPN & Device Management**
+2. Tap the **mitmproxy** profile under "Downloaded Profile"
+3. Tap **Install**, enter your passcode, and confirm
+
+#### 5. Trust the certificate
+
+> This step is required and often missed.
+
+1. Go to **Settings > General > About > Certificate Trust Settings**
+2. Enable **Full Trust** for the mitmproxy root certificate
+3. Tap **Continue** on the warning dialog
+
+#### 6. Configure WiFi proxy
+
+1. Go to **Settings > Wi-Fi** and tap the **(i)** next to your connected network
+2. Scroll to **HTTP Proxy** and select **Manual**
+3. Set **Server** to your Mac's IP and **Port** to `28080`
+4. Tap **Save**
+
+#### 7. Verify
+
+Trigger an SSE request from your app. You should see it intercepted in the orthrus UI at `http://localhost:5173`.
+
+> **Note:** Some SDKs (e.g., Datadog, ContentSquare) use certificate pinning and will show TLS errors in the proxy logs. This is expected and does not affect your app's SSE traffic.
+
 ### Desktop App (macOS)
 
 ```bash
