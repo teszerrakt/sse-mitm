@@ -86,13 +86,6 @@ Trigger an SSE request from your app. You should see it intercepted in the orthr
 
 > **Note:** Some SDKs (e.g., Datadog, ContentSquare) use certificate pinning and will show TLS errors in the proxy logs. This is expected and does not affect your app's SSE traffic.
 
-### Android Device Setup
-
-1. Export the mitmproxy CA certificate from `~/.mitmproxy/mitmproxy-ca-cert.cer`
-2. Transfer it to your Android device
-3. Go to **Settings > Security > Install from storage** and install the certificate
-4. Set WiFi proxy to `<your-mac-ip>:28080`
-
 ### Desktop App (macOS)
 
 ```bash
